@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: "Sahakolay API Documentation"
+  title: "Starter Kit API Documentation"
   description: "sahakolay.com"
   version: "1.0.0"
 components:
