@@ -15,58 +15,59 @@ This repository is a starter kit designed to provide a foundational structure fo
 
 ```
 /asset
-    /css       - Contains CSS files for styling the frontend of the application.
-    /img       - Stores image assets used in the application.
-    /js        - Holds JavaScript files for adding interactivity to the frontend.
+    /css    - Contains CSS files for styling the frontend of the application.
+    /img    - Stores image assets used in the application.
+    /js     - Holds JavaScript files for adding interactivity to the frontend.
     swagger.yaml - API documentation written in the OpenAPI Specification (formerly Swagger).
     Note: This directory is typically used for frontend projects. If your project is an API-only project, this directory can be removed.
 /cmd
-    main.go    - The entry point for the application, where the main function resides.
+    main.go - The entry point for the application, where the main function resides.
 /handler
     - Handles HTTP requests, mapping them to corresponding services or business logic.
 /model
     - Contains the data models and entities that represent the structure of the data used in the application.
 /pkg
     /auth
-        bcrypt.go  - Handles password hashing and verification using bcrypt.
-        jwt.go     - Manages JWT (JSON Web Token) creation, parsing, and validation.
+        bcrypt.go   - Handles password hashing and verification using bcrypt.
+        jwt.go      - Manages JWT (JSON Web Token) creation, parsing, and validation.
     /cache
-        cache.go   - Implements caching mechanisms, potentially using technologies like Redis.
+        cache.go    - Implements caching mechanisms, potentially using technologies like Redis.
     /conn
-        db.go      - Manages database connections and queries.
-        kafka.go   - Handles Kafka messaging system connections and operations.
-        redis.go   - Manages Redis connections and operations.
+        db.go       - Manages database connections and queries.
+        kafka.go    - Handles Kafka messaging system connections and operations.
+        redis.go    - Manages Redis connections and operations.
     /load
-        sql.go     - Loads and manages SQL queries or scripts. 
+        sql.go      - Loads and manages SQL queries or scripts.
+        render.go   - Render templ template 
     /logger
-        logger.go  - Provides logging functionalities for the application.
+        logger.go   - Provides logging functionalities for the application.
     /manager
-        manager.go - Centralizes and manages application-wide dependencies and services.
+        manager.go  - Centralizes and manages application-wide dependencies and services.
     /response
-        json.go    - Formats and handles JSON responses.
-        mail.go    - Manages email sending functionalities.
-        sms.go     - Handles SMS sending operations.
+        json.go     - Formats and handles JSON responses.
+        mail.go     - Manages email sending functionalities.
+        sms.go      - Handles SMS sending operations.
         response.go - Defines structures and functions for handling HTTP responses.
     /validate
         validate.go - Implements input validation using libraries like go-playground/validator.
 /service
     - Contains business logic and application services that orchestrate operations between handlers, models, and other packages.
 /view
-    /component - Stores reusable frontend components (HTML, templates, etc.).
-    /page      - Holds the page-specific templates or views for the application.
+    /component  - Stores reusable frontend components (HTML, templates, etc.).
+    /page       - Holds the page-specific templates or views for the application.
     swagger.html - The HTML file that displays the Swagger UI for API documentation.
     Note: This directory is typically used for frontend projects or projects with user interfaces. If your project is an API-only project, this directory can be removed.
 .dockerignore - Lists files and directories to ignore in the Docker context during image build.
-.env          - Contains environment variables for application configuration.
-.env.example  - An example .env file, showing required environment variables without sensitive data.
-.gitignore    - Specifies files and directories to be ignored by Git version control.
-dockerfile    - Script with instructions to build a Docker image for the application.
-go.mod        - Defines the module path and lists the dependencies of the Go project.
-go.sum        - Records the checksums of the dependencies listed in go.mod.
-LICENSE       - The license under which the project is distributed.
-makefile      - Contains rules to automate tasks such as building, testing, and running the application.
-query.sql     - SQL query files that can be used for raw queries.
-README.md     - The main documentation file that provides an overview of the project and instructions for setup and usage.
+.env            - Contains environment variables for application configuration.
+.env.example    - An example .env file, showing required environment variables without sensitive data.
+.gitignore      - Specifies files and directories to be ignored by Git version control.
+dockerfile      - Script with instructions to build a Docker image for the application.
+go.mod          - Defines the module path and lists the dependencies of the Go project.
+go.sum          - Records the checksums of the dependencies listed in go.mod.
+LICENSE         - The license under which the project is distributed.
+makefile        - Contains rules to automate tasks such as building, testing, and running the application.
+query.sql       - SQL query files that can be used for raw queries.
+README.md       - The main documentation file that provides an overview of the project and instructions for setup and usage.
 ```
 
 ## Getting Started
