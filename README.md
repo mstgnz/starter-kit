@@ -1,6 +1,6 @@
 # Go Project Template
 
-Welcome to the Go Project Template! This repository provides a well-structured and modular foundation for building Go applications. It's designed to help you quickly get started with a new Go project by providing a predefined directory layout, basic configurations, and sample code.
+This repository provides a well-structured and modular foundation for building Go applications. It's designed to help you quickly get started with a new Go project by providing a predefined directory layout, basic configurations, and sample code.
 
 ## Features
 
@@ -72,29 +72,32 @@ README.md     - The main documentation file that provides an overview of the pro
 ## Getting Started
 
 1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/mstgnz/starter-kit.git
-   ```
+    ```bash
+    git clone https://github.com/mstgnz/starter-kit.git
+    ```
 2. **Rename the directory** to your project name:
-   ```bash
-   mv starter-kit my-new-project
-   ```
+    ```bash
+    mv starter-kit my-new-project
+    ```
 3. **Initialize a new Go module**:
-   ```bash
-   cd my-new-project
-   go mod init github.com/mstgnz/my-new-project
-   ```
+    ```bash
+    cd my-new-project
+    go mod init github.com/mstgnz/my-new-project
+    ```
 4. **Install dependencies**:
-   ```bash
-   go mod tidy
-   ```
+    ```bash
+    go mod tidy
+    ```
 5. **Start developing**: Customize the template to suit your project's needs.
+6. **Run project**:
+    ```bash
+    make live
+    ```
 
 ## How to Use
 
-- **Adding a new package**: Create a new directory under `/internal` or `/pkg` and place your code there. Follow the modular approach for clear organization.
-- **Configuration**: Adjust the settings in the `/config` package to fit your environment (e.g., database credentials, API keys).
-- **Customizing middleware**: Add or modify middleware in the `/api/middleware` directory as needed.
+- **Adding a new package**: Create a new directory under `/pkg` and place your code there. Follow the modular approach for clear organization.
+- **Configuration**: Adjust the settings in the `/pkg/manager` package to fit your environment (e.g., database credentials, API keys).
 
 ## Contribution
 
