@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/IBM/sarama v1.43.2
+	github.com/a-h/templ v0.2.747
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/golang-jwt/jwt/v5 v5.2.1

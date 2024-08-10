@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	"github.com/mstgnz/starter-kit/handler"
+	"github.com/mstgnz/starter-kit/model"
 	"github.com/mstgnz/starter-kit/pkg/auth"
 	"github.com/mstgnz/starter-kit/pkg/load"
 	"github.com/mstgnz/starter-kit/pkg/logger"
@@ -23,6 +26,9 @@ import (
 
 var (
 	PORT string
+
+	userHandler = handler.UserHandler{}
+	homeHandler = handler.HomeHandler{}
 )
 
 func init() {
@@ -45,6 +51,16 @@ func init() {
 	}
 
 	PORT = os.Getenv("APP_PORT")
+}
+
+type HttpHandler func(w http.ResponseWriter, r *http.Request) error
+
+func Catch(h HttpHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := h(w, r); err != nil {
+			logger.Info("HTTP Handler Error", "err", err.Error(), "path", r.URL.Path)
+		}
+	}
 }
 
 func main() {
@@ -71,15 +87,95 @@ func main() {
 		http.ServeFile(w, r, "./view/swagger.html")
 	})
 
+	// web without auth
+	r.Group(func(r chi.Router) {
+		r.Use(isAuthMiddleware)
+		r.Get("/login", Catch(userHandler.LoginHandler))
+		r.Post("/login", Catch(userHandler.LoginHandler))
+		r.Get("/register", Catch(userHandler.RegisterHandler))
+		r.Post("/register", Catch(userHandler.RegisterHandler))
+	})
+
+	// web with auth
+	r.Group(func(r chi.Router) {
+		r.Use(webAuthMiddleware)
+		r.Get("/", Catch(homeHandler.HomeHandler))
+	})
+
+	// api without auth
+	r.With(headerMiddleware).Post("/api/login", Catch(userHandler.LoginHandler))
+	r.With(headerMiddleware).Post("/api/register", Catch(userHandler.RegisterHandler))
+
+	r.Route("/api", func(r chi.Router) {
+		r.Use(headerMiddleware)
+		r.Use(apiAuthMiddleware)
+
+	})
+
 	// Not Found
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Status: false, Message: "Not Found"})
+		if strings.Contains(r.URL.Path, "api") {
+			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Status: false, Message: "Not Found"})
+			return
+		}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	})
 
 	err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), r)
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal(err.Error())
 	}
+}
+
+func isAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("Authorization")
+
+		if err == nil {
+			token := strings.Replace(cookie.Value, "Bearer ", "", 1)
+			_, err = auth.GetUserIDByToken(token)
+			if err == nil {
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func webAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("Authorization")
+
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		token := strings.Replace(cookie.Value, "Bearer ", "", 1)
+
+		userId, err := auth.GetUserIDByToken(token)
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		user_id, err := strconv.Atoi(userId)
+		if err != nil && user_id == 0 {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		user := &model.User{}
+		err = user.GetWithId(user_id)
+
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), manager.CKey("user"), user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func apiAuthMiddleware(next http.Handler) http.Handler {
@@ -103,17 +199,16 @@ func apiAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		/* user := &models.User{}
+		user := &model.User{}
 		err = user.GetWithId(user_id)
 
 		if err != nil {
-			_ = config.WriteJSON(w, http.StatusUnauthorized, config.Response{Status: false, Message: err.Error()})
+			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Status: false, Message: err.Error()})
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), config.CKey("user"), user)
-		next.ServeHTTP(w, r.WithContext(ctx)) */
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), manager.CKey("user"), user)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
