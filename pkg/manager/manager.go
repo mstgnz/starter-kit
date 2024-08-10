@@ -9,6 +9,8 @@ import (
 	"github.com/mstgnz/starter-kit/pkg/response"
 )
 
+type CKey string
+
 type Manager struct {
 	DB        *conn.DB
 	Mail      *response.Mail
