@@ -15,11 +15,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	"github.com/mstgnz/starter-kit/handler"
+	"github.com/mstgnz/starter-kit/internal/config"
 	"github.com/mstgnz/starter-kit/model"
 	"github.com/mstgnz/starter-kit/pkg/auth"
 	"github.com/mstgnz/starter-kit/pkg/load"
 	"github.com/mstgnz/starter-kit/pkg/logger"
-	"github.com/mstgnz/starter-kit/pkg/manager"
 	"github.com/mstgnz/starter-kit/pkg/response"
 	"github.com/mstgnz/starter-kit/pkg/validate"
 )
@@ -38,16 +38,16 @@ func init() {
 		log.Fatalf("Load Env Error: %v", err)
 	}
 	// init conf
-	_ = manager.Init()
+	_ = config.App()
 	validate.CustomValidate()
 
 	// Load Sql
-	manager.Init().QUERY = make(map[string]string)
+	config.App().QUERY = make(map[string]string)
 	if query, err := load.LoadSQLQueries(); err != nil {
 		logger.Warn(fmt.Sprintf("Load Sql Error: %v", err))
 		log.Fatalf("Load Sql Error: %v", err)
 	} else {
-		manager.Init().QUERY = query
+		config.App().QUERY = query
 	}
 
 	PORT = os.Getenv("APP_PORT")
@@ -66,9 +66,9 @@ func Catch(h HttpHandler) http.HandlerFunc {
 func main() {
 
 	defer func() {
-		manager.Init().Redis.CloseRedis()
-		manager.Init().Kafka.CloseKafka()
-		manager.Init().DB.CloseDatabase()
+		config.App().Redis.CloseRedis()
+		config.App().Kafka.CloseKafka()
+		config.App().DB.CloseDatabase()
 	}()
 
 	// Chi Define Routes
@@ -173,7 +173,7 @@ func webAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), manager.CKey("user"), user)
+		ctx := context.WithValue(r.Context(), config.CKey("user"), user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -207,7 +207,7 @@ func apiAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), manager.CKey("user"), user)
+		ctx := context.WithValue(r.Context(), config.CKey("user"), user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

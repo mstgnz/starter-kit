@@ -24,6 +24,9 @@ This repository is a starter kit designed to provide a foundational structure fo
     main.go - The entry point for the application, where the main function resides.
 /handler
     - Handles HTTP requests, mapping them to corresponding services or business logic.
+/internal
+    /config
+        conf.go     - Centralizes and manages application-wide dependencies and services.
 /model
     - Contains the data models and entities that represent the structure of the data used in the application.
 /pkg
@@ -41,13 +44,12 @@ This repository is a starter kit designed to provide a foundational structure fo
         render.go   - Render templ template 
     /logger
         logger.go   - Provides logging functionalities for the application.
-    /manager
-        manager.go  - Centralizes and manages application-wide dependencies and services.
     /response
         json.go     - Formats and handles JSON responses.
+        response.go - Defines structures and functions for handling HTTP responses.
+    /send
         mail.go     - Manages email sending functionalities.
         sms.go      - Handles SMS sending operations.
-        response.go - Defines structures and functions for handling HTTP responses.
     /validate
         validate.go - Implements input validation using libraries like go-playground/validator.
 /service

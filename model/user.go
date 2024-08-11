@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mstgnz/starter-kit/internal/config"
 	"github.com/mstgnz/starter-kit/pkg/auth"
-	"github.com/mstgnz/starter-kit/pkg/manager"
 )
 
 type User struct {
@@ -44,7 +44,7 @@ func (m *User) Count() int {
 	rowCount := 0
 
 	// prepare count
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USERS_COUNT"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USERS_COUNT"])
 	if err != nil {
 		return rowCount
 	}
@@ -71,7 +71,7 @@ func (m *User) Get(offset, limit int, search string) []*User {
 	users := []*User{}
 
 	// prepare users paginate
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USERS_PAGINATE"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USERS_PAGINATE"])
 	if err != nil {
 		return users
 	}
@@ -98,7 +98,7 @@ func (m *User) Get(offset, limit int, search string) []*User {
 
 func (m *User) Create(register *Register) error {
 
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_INSERT"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_INSERT"])
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (m *User) Exists(email string) (bool, error) {
 	exists := 0
 
 	// prepare
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_EXISTS_WITH_EMAIL"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_EXISTS_WITH_EMAIL"])
 	if err != nil {
 		return false, err
 	}
@@ -142,7 +142,7 @@ func (m *User) IDExists(id int) (bool, error) {
 	exists := 0
 
 	// prepare
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_EXISTS_WITH_ID"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_EXISTS_WITH_ID"])
 	if err != nil {
 		return false, err
 	}
@@ -166,7 +166,7 @@ func (m *User) IDExists(id int) (bool, error) {
 
 func (m *User) GetWithId(id int) error {
 
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_GET_WITH_ID"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_GET_WITH_ID"])
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func (m *User) GetWithId(id int) error {
 
 func (m *User) GetWithMail(email string) error {
 
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_GET_WITH_EMAIL"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_GET_WITH_EMAIL"])
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (m *User) GetWithMail(email string) error {
 
 func (m *User) ProfileUpdate(query string, params []any) error {
 
-	stmt, err := manager.Init().DB.Prepare(query)
+	stmt, err := config.App().DB.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (m *User) ProfileUpdate(query string, params []any) error {
 }
 
 func (m *User) PasswordUpdate(password string) error {
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_UPDATE_PASS"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_UPDATE_PASS"])
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (m *User) PasswordUpdate(password string) error {
 func (m *User) LastLoginUpdate() error {
 	lastLogin := time.Now().Format("2006-01-02 15:04:05")
 
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_LAST_LOGIN"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_LAST_LOGIN"])
 	if err != nil {
 		return err
 	}
@@ -309,7 +309,7 @@ func (m *User) LastLoginUpdate() error {
 }
 
 func (m *User) Delete(userID int) error {
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["USER_DELETE"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_DELETE"])
 	if err != nil {
 		return err
 	}

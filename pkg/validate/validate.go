@@ -6,11 +6,11 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/mstgnz/starter-kit/pkg/manager"
+	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 func Validate(structure any) error {
-	validate := manager.Init().Validator
+	validate := config.App().Validator
 	var errStr string
 	var errSlc []error
 	// returns nil or ValidationErrors ( []FieldError )
@@ -43,7 +43,7 @@ func CustomValidate() {
 // In the case of slices, this tag checks if the slice itself exists, but does not check if the contents of the slice are empty.
 // We have written a special validation function to check if slices are empty.
 func CustomNoEmptyValidate() {
-	manager.Init().Validator.RegisterValidation("nonempty", func(fl validator.FieldLevel) bool {
+	config.App().Validator.RegisterValidation("nonempty", func(fl validator.FieldLevel) bool {
 		field := fl.Field()
 		// Ensure the field is a slice or array
 		if field.Kind() != reflect.Slice && field.Kind() != reflect.Array {

@@ -4,11 +4,11 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/mstgnz/starter-kit/pkg/manager"
+	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 func logToDB(level string, message string) {
-	stmt, err := manager.Init().DB.Prepare(manager.Init().QUERY["APP_LOG_INSERT"])
+	stmt, err := config.App().DB.Prepare(config.App().QUERY["APP_LOG_INSERT"])
 	if err == nil {
 		_, _ = stmt.Exec(level, message)
 	}

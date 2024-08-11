@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mstgnz/starter-kit/pkg/manager"
+	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 var letterRunes = []rune("0987654321abcçdefgğhıijklmnoöpqrsştuüvwxyzABCÇDEFGĞHIİJKLMNOÖPQRSTUÜVWXYZ-_!?+&%=*")
@@ -21,7 +21,7 @@ func GenerateToken(userId int) (string, error) {
 		Issuer:    strconv.Itoa(userId),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte(manager.Init().SecretKey))
+	t, err := token.SignedString([]byte(config.App().SecretKey))
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func ValidateToken(token string) (*jwt.Token, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method %v", t.Header["alg"])
 		}
-		return []byte(manager.Init().SecretKey), nil
+		return []byte(config.App().SecretKey), nil
 	})
 }
 
