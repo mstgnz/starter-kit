@@ -25,16 +25,11 @@ This repository is a starter kit designed to provide a foundational structure fo
 /handler
     - Handles HTTP requests, mapping them to corresponding services or business logic.
 /internal
-    /config
-        conf.go     - Centralizes and manages application-wide dependencies and services.
-/model
-    - Contains the data models and entities that represent the structure of the data used in the application.
-/pkg
     /auth
         bcrypt.go   - Handles password hashing and verification using bcrypt.
         jwt.go      - Manages JWT (JSON Web Token) creation, parsing, and validation.
-    /cache
-        cache.go    - Implements caching mechanisms, potentially using technologies like Redis.
+    /config
+        conf.go     - Centralizes and manages application-wide dependencies and services.
     /conn
         db.go       - Manages database connections and queries.
         kafka.go    - Handles Kafka messaging system connections and operations.
@@ -47,11 +42,15 @@ This repository is a starter kit designed to provide a foundational structure fo
     /response
         json.go     - Formats and handles JSON responses.
         response.go - Defines structures and functions for handling HTTP responses.
-    /send
-        mail.go     - Manages email sending functionalities.
-        sms.go      - Handles SMS sending operations.
     /validate
         validate.go - Implements input validation using libraries like go-playground/validator.
+/model
+    - Contains the data models and entities that represent the structure of the data used in the application.
+/pkg
+    /cache
+        cache.go    - Implements caching mechanisms, potentially using technologies like Redis.
+    /mail
+        mail.go     - Manages email sending functionalities.
 /service
     - Contains business logic and application services that orchestrate operations between handlers, models, and other packages.
 /view

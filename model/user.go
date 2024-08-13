@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mstgnz/starter-kit/internal/auth"
 	"github.com/mstgnz/starter-kit/internal/config"
-	"github.com/mstgnz/starter-kit/pkg/auth"
 )
 
 type User struct {

@@ -15,13 +15,13 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	"github.com/mstgnz/starter-kit/handler"
+	"github.com/mstgnz/starter-kit/internal/auth"
 	"github.com/mstgnz/starter-kit/internal/config"
+	"github.com/mstgnz/starter-kit/internal/load"
+	"github.com/mstgnz/starter-kit/internal/logger"
+	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/mstgnz/starter-kit/internal/validate"
 	"github.com/mstgnz/starter-kit/model"
-	"github.com/mstgnz/starter-kit/pkg/auth"
-	"github.com/mstgnz/starter-kit/pkg/load"
-	"github.com/mstgnz/starter-kit/pkg/logger"
-	"github.com/mstgnz/starter-kit/pkg/response"
-	"github.com/mstgnz/starter-kit/pkg/validate"
 )
 
 var (

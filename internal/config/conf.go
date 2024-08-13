@@ -4,16 +4,16 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mstgnz/starter-kit/internal/conn"
 	"github.com/mstgnz/starter-kit/pkg/cache"
-	"github.com/mstgnz/starter-kit/pkg/conn"
-	"github.com/mstgnz/starter-kit/pkg/send"
+	"github.com/mstgnz/starter-kit/pkg/mail"
 )
 
 type CKey string
 
 type Config struct {
 	DB        *conn.DB
-	Mail      *send.Mail
+	Mail      *mail.Mail
 	Cache     *cache.Cache
 	Kafka     *conn.Kafka
 	Redis     *conn.Redis
@@ -34,7 +34,7 @@ func App() *Config {
 			Validator: &validator.Validate{},
 			// the secret key will change every time the application is restarted.
 			SecretKey: "asdf1234", //RandomString(8),
-			Mail: &send.Mail{
+			Mail: &mail.Mail{
 				From: os.Getenv("MAIL_FROM"),
 				Name: os.Getenv("MAIL_FROM_NAME"),
 				Host: os.Getenv("MAIL_HOST"),

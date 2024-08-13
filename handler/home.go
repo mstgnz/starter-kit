@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/mstgnz/starter-kit/pkg/load"
+	"github.com/mstgnz/starter-kit/internal/load"
 	"github.com/mstgnz/starter-kit/view/page"
 )
 
