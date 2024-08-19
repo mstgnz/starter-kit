@@ -18,6 +18,7 @@ import (
 	"github.com/mstgnz/starter-kit/internal/auth"
 	"github.com/mstgnz/starter-kit/internal/config"
 	"github.com/mstgnz/starter-kit/internal/load"
+	"github.com/mstgnz/starter-kit/internal/localization"
 	"github.com/mstgnz/starter-kit/internal/logger"
 	"github.com/mstgnz/starter-kit/internal/response"
 	"github.com/mstgnz/starter-kit/internal/validate"
@@ -49,6 +50,14 @@ func init() {
 	} else {
 		config.App().QUERY = query
 	}
+
+	// Load Translation
+	localization.LoadTranslations()
+	//log.Println(localization.Translations["en"]["routes"])
+
+	// Load Routes
+	config.LoadRoutesFromJSON()
+	//log.Println(config.App().Routes["home"]["tr"])
 
 	PORT = os.Getenv("APP_PORT")
 }

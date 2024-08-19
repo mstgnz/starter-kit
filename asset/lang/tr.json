@@ -1,0 +1,33 @@
+{
+    "welcome": "Web sitemize hoş geldiniz!",
+    "home": "Anasayfa",
+    "about": "Hakkımızda",
+    "how-it-works": "Nasıl Çalışır",
+    "contact": "İletişim",
+    "register": "Üye Ol",
+    "login": "Giriş Yap",
+    "logout": "Çıkış Yap",
+    "basket": "Sepetim",
+    "checkout": "Ödeme Yap",
+    "faqs": "SSS",
+    "not-found": "Sayfa Bulunamadı",
+    "favorite": "Favorilerim",
+    "reservation": "Rezervasyonlarım",
+    "routes": {
+        "home": "/tr",
+        "about": "/tr/hakkimizda",
+        "how-it-works": "/tr/nasil-calisir",
+        "contact": "/tr/iletisim",
+        "field-detail": "/tr/saha-detay/",
+        "login": "/tr/giris-yap",
+        "register": "/tr/uye-ol",
+        "not-found": "/tr/sayfa-bulunamadi",
+        "profile": "/tr/hesabim",
+        "favorite": "/tr/favorilerim",
+        "basket": "/tr/sepetim",
+        "checkout": "/tr/odeme-yap",
+        "faqs": "/tr/sss",
+        "reservation": "/tr/rezervasyonlarim",
+        "slug": "/tr/{slug}"
+    }
+}

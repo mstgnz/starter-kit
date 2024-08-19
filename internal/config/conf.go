@@ -20,6 +20,9 @@ type Config struct {
 	Validator *validator.Validate
 	SecretKey string
 	QUERY     map[string]string
+	Lang      string
+	Langs     []string
+	Routes    map[string]map[string]string
 }
 
 var instance *Config
@@ -34,6 +37,9 @@ func App() *Config {
 			Validator: &validator.Validate{},
 			// the secret key will change every time the application is restarted.
 			SecretKey: "asdf1234", //RandomString(8),
+			Lang:      "tr",
+			Langs:     []string{"tr", "en"},
+			Routes:    make(map[string]map[string]string),
 			Mail: &mail.Mail{
 				From: os.Getenv("MAIL_FROM"),
 				Name: os.Getenv("MAIL_FROM_NAME"),

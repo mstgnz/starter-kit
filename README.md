@@ -18,6 +18,7 @@ This repository is a starter kit designed to provide a foundational structure fo
     /css    - Contains CSS files for styling the frontend of the application.
     /img    - Stores image assets used in the application.
     /js     - Holds JavaScript files for adding interactivity to the frontend.
+    /lang   - Localization
     swagger.yaml - API documentation written in the OpenAPI Specification (formerly Swagger).
     Note: This directory is typically used for frontend projects. If your project is an API-only project, this directory can be removed.
 /cmd
@@ -30,6 +31,7 @@ This repository is a starter kit designed to provide a foundational structure fo
         jwt.go      - Manages JWT (JSON Web Token) creation, parsing, and validation.
     /config
         conf.go     - Centralizes and manages application-wide dependencies and services.
+        routes.go   - Generate route list with localization
     /conn
         db.go       - Manages database connections and queries.
         kafka.go    - Handles Kafka messaging system connections and operations.
@@ -37,6 +39,8 @@ This repository is a starter kit designed to provide a foundational structure fo
     /load
         sql.go      - Loads and manages SQL queries or scripts.
         render.go   - Render templ template 
+    /localization
+        localization.go - Localization for use in template
     /logger
         logger.go   - Provides logging functionalities for the application.
     /response
