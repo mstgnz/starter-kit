@@ -103,7 +103,7 @@ README.md       - The main documentation file that provides an overview of the p
 ## How to Use
 
 - **Adding a new package**: Create a new directory under `/pkg` and place your code there. Follow the modular approach for clear organization.
-- **Configuration**: Adjust the settings in the `/pkg/manager` package to fit your environment (e.g., database credentials, API keys).
+- **Configuration**: Adjust the settings in the `/internal/config` package to fit your environment (e.g., database credentials, API keys).
 
 ## Contribution
 
