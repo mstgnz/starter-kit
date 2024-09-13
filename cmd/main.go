@@ -99,16 +99,20 @@ func main() {
 	// web without auth
 	r.Group(func(r chi.Router) {
 		r.Use(isAuthMiddleware)
-		r.Get("/login", Catch(userHandler.LoginHandler))
+		for _, lang := range config.App().Langs {
+			r.Get(config.App().Routes["login"][lang], Catch(userHandler.LoginHandler))
+			r.Get(config.App().Routes["register"][lang], Catch(userHandler.RegisterHandler))
+		}
 		r.Post("/login", Catch(userHandler.LoginHandler))
-		r.Get("/register", Catch(userHandler.RegisterHandler))
 		r.Post("/register", Catch(userHandler.RegisterHandler))
 	})
 
 	// web with auth
 	r.Group(func(r chi.Router) {
 		r.Use(webAuthMiddleware)
-		r.Get("/", Catch(homeHandler.HomeHandler))
+		for _, lang := range config.App().Langs {
+			r.Get(config.App().Routes["home"][lang], Catch(homeHandler.HomeHandler))
+		}
 	})
 
 	// api without auth
