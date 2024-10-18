@@ -111,7 +111,7 @@ func (db *DB) GetObject(query string, params []any, model any) error {
 
 	// Map columns to model fields
 	for i, columnName := range columns {
-		fieldName := strings.ToLower(columnName)
+		fieldName := strings.Join(strings.Split(columnName, "_"), "")
 		if field, ok := fieldMap[fieldName]; ok {
 			fieldPointers[i] = field.Addr().Interface()
 		} else {
@@ -172,7 +172,7 @@ func (db *DB) ListObject(query string, params []any, model any) ([]any, error) {
 
 		// Map columns to model fields
 		for i, columnName := range columns {
-			fieldName := strings.ToLower(columnName) // Sütun ismi küçük harfe çevriliyor
+			fieldName := strings.Join(strings.Split(columnName, "_"), "")
 			if field, ok := fieldMap[fieldName]; ok {
 				fieldPointers[i] = field.Addr().Interface()
 			} else {
