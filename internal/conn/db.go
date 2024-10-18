@@ -46,7 +46,7 @@ func (db *DB) CloseDatabase() {
 	}
 }
 
-// QueryExec: runs the given query with the specified parameters.
+// QueryExec: returns nil if the query is executed successfully
 func (db *DB) QueryExec(query string, params []any) error {
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -71,6 +71,59 @@ func (db *DB) QueryExec(query string, params []any) error {
 	}
 
 	return nil
+}
+
+// GetObject: returns only the first record it finds
+func (db *DB) GetObject(query string, params []any, fields []any) error {
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	rows, err := stmt.Query(params...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = stmt.Close()
+		_ = rows.Close()
+	}()
+
+	if rows.Next() {
+		if err := rows.Scan(fields...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ListObject: returns all records it finds
+func (db *DB) ListObject(query string, params []any, fields []any) ([]any, error) {
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := stmt.Query(params...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = stmt.Close()
+		_ = rows.Close()
+	}()
+
+	var objects []any
+
+	for rows.Next() {
+		if err := rows.Scan(fields...); err != nil {
+			return nil, err
+		}
+		objects = append(objects, fields...)
+	}
+
+	return objects, nil
 }
 
 // SoftDelete: soft delete the specified id in the specified table.
@@ -102,7 +155,7 @@ func (db *DB) SoftDelete(id int, table string) error {
 	return nil
 }
 
-// ExistsInTable: If exists, I should get a “nil” return.
+// ExistsInTable: If exists, return "nil".
 func (db *DB) ExistsInTable(table string, conditions map[string]any) error {
 	rowCount, err := db.count(table, conditions)
 	if err != nil {
@@ -114,7 +167,7 @@ func (db *DB) ExistsInTable(table string, conditions map[string]any) error {
 	return nil
 }
 
-// NotExistsInTable: If not exists, I should get a “nil” return.
+// NotExistsInTable: If not exists, return "nil".
 func (db *DB) NotExistsInTable(table string, conditions map[string]any) error {
 	rowCount, err := db.count(table, conditions)
 	if err != nil {
@@ -126,8 +179,8 @@ func (db *DB) NotExistsInTable(table string, conditions map[string]any) error {
 	return nil
 }
 
-// CountInTable: returns the number of data according to the conditions
-func (db *DB) CountInTable(table string, conditions map[string]any) (int, error) {
+// DynamicCount: returns the number of data according to the conditions
+func (db *DB) DynamicCount(table string, conditions map[string]any) (int, error) {
 	rowCount := 0
 
 	query := fmt.Sprintf("SELECT count(*) FROM %s", table)
