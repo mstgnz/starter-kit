@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -74,7 +75,8 @@ func (db *DB) QueryExec(query string, params []any) error {
 }
 
 // GetObject: returns only the first record it finds
-func (db *DB) GetObject(query string, params []any, fields []any) error {
+// use config.App().DB.GetObject(query, []any{id}, &model.Address{})
+func (db *DB) GetObject(query string, params []any, model any) error {
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return err
@@ -84,22 +86,55 @@ func (db *DB) GetObject(query string, params []any, fields []any) error {
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		_ = stmt.Close()
 		_ = rows.Close()
 	}()
 
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	// Create new model instance
+	modelInstance := reflect.ValueOf(model).Elem()
+
+	// Slice to map field addresses for columns returned in the query
+	fieldPointers := make([]any, len(columns))
+
+	// Match column names with model fields
+	fieldMap := map[string]reflect.Value{}
+	for i := 0; i < modelInstance.NumField(); i++ {
+		fieldMap[strings.ToLower(modelInstance.Type().Field(i).Name)] = modelInstance.Field(i)
+	}
+
+	// Map columns to model fields
+	for i, columnName := range columns {
+		fieldName := strings.ToLower(columnName)
+		if field, ok := fieldMap[fieldName]; ok {
+			fieldPointers[i] = field.Addr().Interface()
+		} else {
+			// If the model does not have this column, assign it to a dummy value.
+			var dummy sql.NullString
+			fieldPointers[i] = &dummy
+		}
+	}
+
 	if rows.Next() {
-		if err := rows.Scan(fields...); err != nil {
+		if err := rows.Scan(fieldPointers...); err != nil {
 			return err
 		}
+	} else {
+		return sql.ErrNoRows
 	}
 
 	return nil
 }
 
 // ListObject: returns all records it finds
-func (db *DB) ListObject(query string, params []any, fields []any) ([]any, error) {
+// use: config.App().DB.ListObject(query, params, &model.Address{})
+func (db *DB) ListObject(query string, params []any, model any) ([]any, error) {
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
@@ -109,18 +144,49 @@ func (db *DB) ListObject(query string, params []any, fields []any) ([]any, error
 	if err != nil {
 		return nil, err
 	}
+
 	defer func() {
 		_ = stmt.Close()
 		_ = rows.Close()
 	}()
 
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
 	var objects []any
 
 	for rows.Next() {
-		if err := rows.Scan(fields...); err != nil {
+		// Create new model instance
+		modelInstance := reflect.ValueOf(model).Elem()
+
+		// Slice to map field addresses for columns returned in the query
+		fieldPointers := make([]any, len(columns))
+
+		// Match column names with model fields
+		fieldMap := map[string]reflect.Value{}
+		for i := 0; i < modelInstance.NumField(); i++ {
+			fieldMap[strings.ToLower(modelInstance.Type().Field(i).Name)] = modelInstance.Field(i)
+		}
+
+		// Map columns to model fields
+		for i, columnName := range columns {
+			fieldName := strings.ToLower(columnName) // Sütun ismi küçük harfe çevriliyor
+			if field, ok := fieldMap[fieldName]; ok {
+				fieldPointers[i] = field.Addr().Interface()
+			} else {
+				// If the model does not have this column, assign it to a dummy value.
+				var dummy sql.NullString
+				fieldPointers[i] = &dummy
+			}
+		}
+
+		if err := rows.Scan(fieldPointers...); err != nil {
 			return nil, err
 		}
-		objects = append(objects, fields...)
+
+		objects = append(objects, modelInstance.Interface())
 	}
 
 	return objects, nil
