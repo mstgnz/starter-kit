@@ -64,14 +64,6 @@ func init() {
 
 type HttpHandler func(w http.ResponseWriter, r *http.Request) error
 
-func Catch(h HttpHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := h(w, r); err != nil {
-			logger.Info("HTTP Handler Error", "err", err.Error(), "path", r.URL.Path)
-		}
-	}
-}
-
 func main() {
 
 	defer func() {
@@ -100,24 +92,24 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(isAuthMiddleware)
 		for _, lang := range config.App().Langs {
-			r.Get(config.App().Routes["login"][lang], Catch(userHandler.LoginHandler))
-			r.Get(config.App().Routes["register"][lang], Catch(userHandler.RegisterHandler))
+			r.Get(config.App().Routes["login"][lang], config.Catch(userHandler.LoginHandler))
+			r.Get(config.App().Routes["register"][lang], config.Catch(userHandler.RegisterHandler))
 		}
-		r.Post("/login", Catch(userHandler.LoginHandler))
-		r.Post("/register", Catch(userHandler.RegisterHandler))
+		r.Post("/login", config.Catch(userHandler.LoginHandler))
+		r.Post("/register", config.Catch(userHandler.RegisterHandler))
 	})
 
 	// web with auth
 	r.Group(func(r chi.Router) {
 		r.Use(webAuthMiddleware)
 		for _, lang := range config.App().Langs {
-			r.Get(config.App().Routes["home"][lang], Catch(homeHandler.HomeHandler))
+			r.Get(config.App().Routes["home"][lang], config.Catch(homeHandler.HomeHandler))
 		}
 	})
 
 	// api without auth
-	r.With(headerMiddleware).Post("/api/login", Catch(userHandler.LoginHandler))
-	r.With(headerMiddleware).Post("/api/register", Catch(userHandler.RegisterHandler))
+	r.With(headerMiddleware).Post("/api/login", config.Catch(userHandler.LoginHandler))
+	r.With(headerMiddleware).Post("/api/register", config.Catch(userHandler.RegisterHandler))
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(headerMiddleware)
