@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/mstgnz/starter-kit/internal/load"
 )
 
 type DB struct {
@@ -74,10 +75,68 @@ func (db *DB) QueryExec(query string, params []any) error {
 	return nil
 }
 
-// GetObject: returns only the first record it finds
-// use config.App().DB.GetObject(query, []any{id}, &model.Address{})
-func (db *DB) GetObject(query string, params []any, model any) error {
-	stmt, err := db.Prepare(query)
+// DynamicCount: returns the number of data according to the conditions
+func (db *DB) DynamicCount(p load.Param) (int, error) {
+	rowCount := 0
+
+	params := []any{}
+	clauses := []string{}
+
+	if len(p.Conditions) > 0 {
+		p.Query += " WHERE "
+		paramIndex := 1
+		for column, value := range p.Conditions {
+			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
+			params = append(params, value)
+			paramIndex++
+		}
+		p.Query += strings.Join(clauses, " AND ")
+	}
+
+	p.Query += ";"
+
+	stmt, err := db.Prepare(p.Query)
+	if err != nil {
+		return rowCount, err
+	}
+
+	rows, err := stmt.Query(params...)
+	if err != nil {
+		return rowCount, err
+	}
+	defer func() {
+		_ = stmt.Close()
+		_ = rows.Close()
+	}()
+
+	if rows.Next() {
+		if err := rows.Scan(&rowCount); err != nil {
+			return rowCount, err
+		}
+	}
+
+	return rowCount, nil
+}
+
+// DynamicFind: returns only the first according to the conditions
+func (db *DB) DynamicFind(p load.Param) error {
+	params := []any{}
+	clauses := []string{}
+
+	if len(p.Conditions) > 0 {
+		p.Query += " WHERE "
+		paramIndex := 1
+		for column, value := range p.Conditions {
+			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
+			params = append(params, value)
+			paramIndex++
+		}
+		p.Query += strings.Join(clauses, " AND ")
+	}
+
+	p.Query += ";"
+
+	stmt, err := db.Prepare(p.Query)
 	if err != nil {
 		return err
 	}
@@ -98,7 +157,7 @@ func (db *DB) GetObject(query string, params []any, model any) error {
 	}
 
 	// Create new model instance
-	modelInstance := reflect.ValueOf(model).Elem()
+	modelInstance := reflect.ValueOf(p.Model).Elem()
 
 	// Slice to map field addresses for columns returned in the query
 	fieldPointers := make([]any, len(columns))
@@ -132,10 +191,25 @@ func (db *DB) GetObject(query string, params []any, model any) error {
 	return nil
 }
 
-// ListObject: returns all records it finds
-// use: config.App().DB.ListObject(query, params, &model.Address{})
-func (db *DB) ListObject(query string, params []any, model any) ([]any, error) {
-	stmt, err := db.Prepare(query)
+// DynamicGet: returns all records it finds
+func (db *DB) DynamicGet(p load.Param) ([]any, error) {
+	params := []any{}
+	clauses := []string{}
+
+	if len(p.Conditions) > 0 {
+		p.Query += " WHERE "
+		paramIndex := 1
+		for column, value := range p.Conditions {
+			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
+			params = append(params, value)
+			paramIndex++
+		}
+		p.Query += strings.Join(clauses, " AND ")
+	}
+
+	p.Query += ";"
+
+	stmt, err := db.Prepare(p.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +233,7 @@ func (db *DB) ListObject(query string, params []any, model any) ([]any, error) {
 
 	for rows.Next() {
 		// Create new model instance
-		modelInstance := reflect.ValueOf(model).Elem()
+		modelInstance := reflect.ValueOf(p.Model).Elem()
 
 		// Slice to map field addresses for columns returned in the query
 		fieldPointers := make([]any, len(columns))
@@ -176,7 +250,6 @@ func (db *DB) ListObject(query string, params []any, model any) ([]any, error) {
 			if field, ok := fieldMap[fieldName]; ok {
 				fieldPointers[i] = field.Addr().Interface()
 			} else {
-				// If the model does not have this column, assign it to a dummy value.
 				var dummy sql.NullString
 				fieldPointers[i] = &dummy
 			}
@@ -192,6 +265,167 @@ func (db *DB) ListObject(query string, params []any, model any) ([]any, error) {
 	return objects, nil
 }
 
+// DynamicPaginate: returns all records according to the conditions
+func (db *DB) DynamicPaginate(p load.Param) ([]any, error) {
+	params := []any{}
+	clauses := []string{}
+
+	paramIndex := 1
+	if len(p.Conditions) > 0 {
+		p.Query += " WHERE "
+		for column, value := range p.Conditions {
+			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
+			params = append(params, value)
+			paramIndex++
+		}
+		p.Query += strings.Join(clauses, " AND ")
+	}
+
+	if p.Limit > 0 {
+		p.Query += fmt.Sprintf(" ORDER BY id DESC OFFSET $%d LIMIT $%d", paramIndex, paramIndex+1)
+		params = append(params, p.Offset)
+		params = append(params, p.Limit)
+	}
+
+	p.Query += ";"
+
+	stmt, err := db.Prepare(p.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := stmt.Query(params...)
+	if err != nil {
+		return nil, err
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = stmt.Close()
+		_ = rows.Close()
+	}()
+
+	var objects []any
+
+	for rows.Next() {
+		// Create new model instance
+		modelInstance := reflect.ValueOf(p.Model).Elem()
+
+		// Slice to map field addresses for columns returned in the query
+		fieldPointers := make([]any, len(columns))
+
+		// Match column names with model fields
+		fieldMap := map[string]reflect.Value{}
+		for i := 0; i < modelInstance.NumField(); i++ {
+			fieldMap[strings.ToLower(modelInstance.Type().Field(i).Name)] = modelInstance.Field(i)
+		}
+
+		// Map columns to model fields
+		for i, columnName := range columns {
+			fieldName := strings.Join(strings.Split(columnName, "_"), "")
+			if field, ok := fieldMap[fieldName]; ok {
+				fieldPointers[i] = field.Addr().Interface()
+			} else {
+				var dummy sql.NullString
+				fieldPointers[i] = &dummy
+			}
+		}
+
+		if err := rows.Scan(fieldPointers...); err != nil {
+			return nil, err
+		}
+
+		objects = append(objects, modelInstance.Interface())
+	}
+
+	return objects, nil
+}
+
+// DynamicCreate: the specified values are recorded in the specified table.
+func (db *DB) DynamicCreate(p load.Param) (int, error) {
+	var id int
+	if len(p.Fields) == 0 {
+		return id, fmt.Errorf("no fields provided")
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s (", p.Table)
+
+	columns := []string{}
+	values := []string{}
+	params := []any{}
+	paramIndex := 1
+
+	for column, value := range p.Fields {
+		columns = append(columns, fmt.Sprintf("\"%s\"", column))
+		values = append(values, fmt.Sprintf("$%d", paramIndex))
+		params = append(params, value)
+		paramIndex++
+	}
+
+	query += strings.Join(columns, ", ") + ") VALUES (" + strings.Join(values, ", ") + ") RETURNING id;"
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return id, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(params...).Scan(&id)
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
+}
+
+// DynamicUpdate: the values specified in the table are updated.
+func (db *DB) DynamicUpdate(p load.Param) error {
+	if len(p.Fields) == 0 {
+		return fmt.Errorf("no updates provided")
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET ", p.Table)
+
+	setClauses := []string{}
+	params := []any{}
+	paramIndex := 1
+
+	for column, value := range p.Fields {
+		setClauses = append(setClauses, fmt.Sprintf("%s=$%d", column, paramIndex))
+		params = append(params, value)
+		paramIndex++
+	}
+
+	query += strings.Join(setClauses, ", ")
+
+	if len(p.Conditions) > 0 {
+		whereClauses := []string{}
+		for column, value := range p.Conditions {
+			whereClauses = append(whereClauses, fmt.Sprintf("%s=$%d", column, paramIndex))
+			params = append(params, value)
+			paramIndex++
+		}
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(params...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // SoftDelete: soft delete the specified id in the specified table.
 func (db *DB) SoftDelete(id int, table string) error {
 	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET active=$1,deleted_at=$2,updated_at=$3 WHERE id=$4;", table))
@@ -202,6 +436,33 @@ func (db *DB) SoftDelete(id int, table string) error {
 	deleteAndUpdate := time.Now().Format("2006-01-02 15:04:05")
 
 	result, err := stmt.Exec(false, deleteAndUpdate, deleteAndUpdate, id)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = stmt.Close()
+	}()
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return errors.New(table + " not deleted")
+	}
+
+	return nil
+}
+
+// HardDelete: hard delete the specified id in the specified table.
+func (db *DB) HardDelete(id int, table string) error {
+	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE id=%d;", table, id))
+	if err != nil {
+		return err
+	}
+
+	result, err := stmt.Exec()
 	if err != nil {
 		return err
 	}
@@ -245,147 +506,6 @@ func (db *DB) NotExistsInTable(table string, conditions map[string]any) error {
 	return nil
 }
 
-// DynamicCount: returns the number of data according to the conditions
-func (db *DB) DynamicCount(table string, conditions map[string]any) (int, error) {
-	rowCount := 0
-
-	query := fmt.Sprintf("SELECT count(*) FROM %s", table)
-	params := []any{}
-	clauses := []string{}
-
-	if len(conditions) > 0 {
-		query += " WHERE "
-		paramIndex := 1
-		for column, value := range conditions {
-			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-			params = append(params, value)
-			paramIndex++
-		}
-		query += strings.Join(clauses, " AND ")
-		query += " AND deleted_at IS NULL"
-	} else {
-		query += " WHERE deleted_at IS NULL"
-	}
-
-	query += ";"
-
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return rowCount, err
-	}
-
-	rows, err := stmt.Query(params...)
-	if err != nil {
-		return rowCount, err
-	}
-	defer func() {
-		_ = stmt.Close()
-		_ = rows.Close()
-	}()
-
-	if rows.Next() {
-		if err := rows.Scan(&rowCount); err != nil {
-			return rowCount, err
-		}
-	}
-
-	return rowCount, nil
-}
-
-// DynamicCreate: the specified values are recorded in the specified table.
-func (db *DB) DynamicCreate(table string, fields map[string]any) error {
-	if len(fields) == 0 {
-		return fmt.Errorf("no fields provided")
-	}
-
-	query := fmt.Sprintf("INSERT INTO %s (", table)
-
-	columns := []string{}
-	values := []string{}
-	params := []any{}
-	paramIndex := 1
-
-	for column, value := range fields {
-		columns = append(columns, column)
-		values = append(values, fmt.Sprintf("$%d", paramIndex))
-		params = append(params, value)
-		paramIndex++
-	}
-
-	query += strings.Join(columns, ", ") + ") VALUES (" + strings.Join(values, ", ") + ");"
-
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(params...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DynamicUpdate: the values specified in the table are updated.
-func (db *DB) DynamicUpdate(table string, updates map[string]any, conditions map[string]any) error {
-	if len(updates) == 0 {
-		return fmt.Errorf("no updates provided")
-	}
-	if len(conditions) == 0 {
-		return fmt.Errorf("no conditions provided")
-	}
-
-	query := fmt.Sprintf("UPDATE %s SET ", table)
-
-	setClauses := []string{}
-	params := []any{}
-	paramIndex := 1
-
-	for column, value := range updates {
-		setClauses = append(setClauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-		params = append(params, value)
-		paramIndex++
-	}
-
-	query += strings.Join(setClauses, ", ")
-
-	whereClauses := []string{}
-	for column, value := range conditions {
-		whereClauses = append(whereClauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-		params = append(params, value)
-		paramIndex++
-	}
-
-	query += " WHERE " + strings.Join(whereClauses, " AND ")
-	query += " AND deleted_at IS NULL;"
-
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(params...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (db *DB) RunPrepare(exec any, query string, args ...any) (*sql.Stmt, error) {
-	switch e := exec.(type) {
-	case *sql.DB:
-		return e.Prepare(query)
-	case *sql.Tx:
-		return e.Prepare(query)
-	default:
-		return nil, fmt.Errorf("unsupported exec type")
-	}
-}
-
 func (db *DB) count(table string, conditions map[string]any) (int, error) {
 	rowCount := 0
 	if len(conditions) == 0 {
@@ -406,8 +526,6 @@ func (db *DB) count(table string, conditions map[string]any) (int, error) {
 
 	// append conditions
 	query += strings.Join(clauses, " AND ")
-
-	query += " AND deleted_at IS NULL;"
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
