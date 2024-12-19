@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine as builder
+FROM golang:1.23-alpine as builder
 RUN apk add --no-cache tzdata
 WORKDIR /app
 COPY go.mod go.sum ./
