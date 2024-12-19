@@ -5,16 +5,16 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mstgnz/starter-kit/internal/conn"
-	"github.com/mstgnz/starter-kit/pkg/cache"
-	"github.com/mstgnz/starter-kit/pkg/mail"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz"
 )
 
 type CKey string
 
 type Config struct {
 	DB        *conn.DB
-	Mail      *mail.Mail
-	Cache     *cache.Cache
+	Mail      *mstgnz.Mail
+	Cache     *mstgnz.Cache
+	Gobuilder *mstgnz.GoBuilder
 	Kafka     *conn.Kafka
 	Redis     *conn.Redis
 	Validator *validator.Validate
@@ -31,7 +31,8 @@ func App() *Config {
 	if instance == nil {
 		instance = &Config{
 			DB:        &conn.DB{},
-			Cache:     &cache.Cache{},
+			Cache:     &mstgnz.Cache{},
+			Gobuilder: &mstgnz.GoBuilder{},
 			Kafka:     &conn.Kafka{},
 			Redis:     &conn.Redis{},
 			Validator: validator.New(),
@@ -40,7 +41,7 @@ func App() *Config {
 			Lang:      "tr",
 			Langs:     []string{"tr", "en"},
 			Routes:    make(map[string]map[string]string),
-			Mail: &mail.Mail{
+			Mail: &mstgnz.Mail{
 				From: os.Getenv("MAIL_FROM"),
 				Name: os.Getenv("MAIL_FROM_NAME"),
 				Host: os.Getenv("MAIL_HOST"),
