@@ -11,7 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/mstgnz/starter-kit/internal/load"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz"
 )
 
 type DB struct {
@@ -76,26 +76,12 @@ func (db *DB) QueryExec(query string, params []any) error {
 }
 
 // DynamicCount: returns the number of data according to the conditions
-func (db *DB) DynamicCount(p load.Param) (int, error) {
+func (db *DB) DynamicCount(builder mstgnz.GoBuilder) (int, error) {
 	rowCount := 0
 
-	params := []any{}
-	clauses := []string{}
+	query, params := builder.Prepare()
 
-	if len(p.Conditions) > 0 {
-		p.Query += " WHERE "
-		paramIndex := 1
-		for column, value := range p.Conditions {
-			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-			params = append(params, value)
-			paramIndex++
-		}
-		p.Query += strings.Join(clauses, " AND ")
-	}
-
-	p.Query += ";"
-
-	stmt, err := db.Prepare(p.Query)
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return rowCount, err
 	}
@@ -118,25 +104,11 @@ func (db *DB) DynamicCount(p load.Param) (int, error) {
 	return rowCount, nil
 }
 
-// DynamicFind: returns only the first according to the conditions
-func (db *DB) DynamicFind(p load.Param) error {
-	params := []any{}
-	clauses := []string{}
+// DynamicFind: only renders the first matching record to the p.Model object based on the conditions
+func (db *DB) DynamicFind(builder mstgnz.GoBuilder, model any) error {
+	query, params := builder.Prepare()
 
-	if len(p.Conditions) > 0 {
-		p.Query += " WHERE "
-		paramIndex := 1
-		for column, value := range p.Conditions {
-			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-			params = append(params, value)
-			paramIndex++
-		}
-		p.Query += strings.Join(clauses, " AND ")
-	}
-
-	p.Query += ";"
-
-	stmt, err := db.Prepare(p.Query)
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -157,7 +129,7 @@ func (db *DB) DynamicFind(p load.Param) error {
 	}
 
 	// Create new model instance
-	modelInstance := reflect.ValueOf(p.Model).Elem()
+	modelInstance := reflect.ValueOf(model).Elem()
 
 	// Slice to map field addresses for columns returned in the query
 	fieldPointers := make([]any, len(columns))
@@ -192,24 +164,10 @@ func (db *DB) DynamicFind(p load.Param) error {
 }
 
 // DynamicGet: returns all records it finds
-func (db *DB) DynamicGet(p load.Param) ([]any, error) {
-	params := []any{}
-	clauses := []string{}
+func (db *DB) DynamicGet(builder mstgnz.GoBuilder, model any) ([]any, error) {
+	query, params := builder.Prepare()
 
-	if len(p.Conditions) > 0 {
-		p.Query += " WHERE "
-		paramIndex := 1
-		for column, value := range p.Conditions {
-			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-			params = append(params, value)
-			paramIndex++
-		}
-		p.Query += strings.Join(clauses, " AND ")
-	}
-
-	p.Query += ";"
-
-	stmt, err := db.Prepare(p.Query)
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +191,7 @@ func (db *DB) DynamicGet(p load.Param) ([]any, error) {
 
 	for rows.Next() {
 		// Create new model instance
-		modelInstance := reflect.ValueOf(p.Model).Elem()
+		modelInstance := reflect.ValueOf(model).Elem()
 
 		// Slice to map field addresses for columns returned in the query
 		fieldPointers := make([]any, len(columns))
@@ -266,30 +224,10 @@ func (db *DB) DynamicGet(p load.Param) ([]any, error) {
 }
 
 // DynamicPaginate: returns all records according to the conditions
-func (db *DB) DynamicPaginate(p load.Param) ([]any, error) {
-	params := []any{}
-	clauses := []string{}
+func (db *DB) DynamicPaginate(builder mstgnz.GoBuilder, model any) ([]any, error) {
+	query, params := builder.Prepare()
 
-	paramIndex := 1
-	if len(p.Conditions) > 0 {
-		p.Query += " WHERE "
-		for column, value := range p.Conditions {
-			clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-			params = append(params, value)
-			paramIndex++
-		}
-		p.Query += strings.Join(clauses, " AND ")
-	}
-
-	if p.Limit > 0 {
-		p.Query += fmt.Sprintf(" ORDER BY id DESC OFFSET $%d LIMIT $%d", paramIndex, paramIndex+1)
-		params = append(params, p.Offset)
-		params = append(params, p.Limit)
-	}
-
-	p.Query += ";"
-
-	stmt, err := db.Prepare(p.Query)
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +251,7 @@ func (db *DB) DynamicPaginate(p load.Param) ([]any, error) {
 
 	for rows.Next() {
 		// Create new model instance
-		modelInstance := reflect.ValueOf(p.Model).Elem()
+		modelInstance := reflect.ValueOf(model).Elem()
 
 		// Slice to map field addresses for columns returned in the query
 		fieldPointers := make([]any, len(columns))
@@ -346,28 +284,10 @@ func (db *DB) DynamicPaginate(p load.Param) ([]any, error) {
 }
 
 // DynamicCreate: the specified values are recorded in the specified table.
-func (db *DB) DynamicCreate(p load.Param) (int, error) {
+func (db *DB) DynamicCreate(builder mstgnz.GoBuilder) (int, error) {
 	var id int
-	if len(p.Fields) == 0 {
-		return id, fmt.Errorf("no fields provided")
-	}
-
-	query := fmt.Sprintf("INSERT INTO %s (", p.Table)
-
-	columns := []string{}
-	values := []string{}
-	params := []any{}
-	paramIndex := 1
-
-	for column, value := range p.Fields {
-		columns = append(columns, fmt.Sprintf("\"%s\"", column))
-		values = append(values, fmt.Sprintf("$%d", paramIndex))
-		params = append(params, value)
-		paramIndex++
-	}
-
-	query += strings.Join(columns, ", ") + ") VALUES (" + strings.Join(values, ", ") + ") RETURNING id;"
-
+	query, params := builder.Prepare()
+	query += " RETURNING id;"
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return id, err
@@ -383,34 +303,8 @@ func (db *DB) DynamicCreate(p load.Param) (int, error) {
 }
 
 // DynamicUpdate: the values specified in the table are updated.
-func (db *DB) DynamicUpdate(p load.Param) error {
-	if len(p.Fields) == 0 {
-		return fmt.Errorf("no updates provided")
-	}
-
-	query := fmt.Sprintf("UPDATE %s SET ", p.Table)
-
-	setClauses := []string{}
-	params := []any{}
-	paramIndex := 1
-
-	for column, value := range p.Fields {
-		setClauses = append(setClauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-		params = append(params, value)
-		paramIndex++
-	}
-
-	query += strings.Join(setClauses, ", ")
-
-	if len(p.Conditions) > 0 {
-		whereClauses := []string{}
-		for column, value := range p.Conditions {
-			whereClauses = append(whereClauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-			params = append(params, value)
-			paramIndex++
-		}
-		query += " WHERE " + strings.Join(whereClauses, " AND ")
-	}
+func (db *DB) DynamicUpdate(builder mstgnz.GoBuilder) error {
+	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
