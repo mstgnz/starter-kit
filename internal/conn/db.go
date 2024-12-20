@@ -49,7 +49,9 @@ func (db *DB) CloseDatabase() {
 }
 
 // QueryExec: returns nil if the query is executed successfully
-func (db *DB) QueryExec(query string, params []any) error {
+func (db *DB) QueryExec(builder mstgnz.GoBuilder) error {
+	query, params := builder.Prepare()
+
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return err
