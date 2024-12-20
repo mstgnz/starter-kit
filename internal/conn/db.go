@@ -323,15 +323,20 @@ func (db *DB) DynamicUpdate(builder *mstgnz.GoBuilder) error {
 }
 
 // SoftDelete: soft delete the specified id in the specified table.
-func (db *DB) SoftDelete(id int, table string) error {
-	stmt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET active=$1,deleted_at=$2,updated_at=$3 WHERE id=$4;", table))
+func (db *DB) SoftDelete(builder *mstgnz.GoBuilder) error {
+	query, params := builder.Prepare()
+
+	deleteAndUpdate := time.Now().Format("2006-01-02 15:04:05")
+	query += fmt.Sprintf("updated_at=$%d, deleted_at=$%d;", len(params)+1, len(params)+2)
+	params = append(params, deleteAndUpdate)
+	params = append(params, deleteAndUpdate)
+
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return err
 	}
 
-	deleteAndUpdate := time.Now().Format("2006-01-02 15:04:05")
-
-	result, err := stmt.Exec(false, deleteAndUpdate, deleteAndUpdate, id)
+	result, err := stmt.Exec(params...)
 	if err != nil {
 		return err
 	}
@@ -345,20 +350,23 @@ func (db *DB) SoftDelete(id int, table string) error {
 	}
 
 	if affected == 0 {
-		return errors.New(table + " not deleted")
+		return errors.New("not soft deleted")
 	}
 
 	return nil
 }
 
 // HardDelete: hard delete the specified id in the specified table.
-func (db *DB) HardDelete(id int, table string) error {
-	stmt, err := db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE id=%d;", table, id))
+func (db *DB) HardDelete(builder *mstgnz.GoBuilder) error {
+
+	query, params := builder.Prepare()
+
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return err
 	}
 
-	result, err := stmt.Exec()
+	result, err := stmt.Exec(params...)
 	if err != nil {
 		return err
 	}
@@ -372,56 +380,40 @@ func (db *DB) HardDelete(id int, table string) error {
 	}
 
 	if affected == 0 {
-		return errors.New(table + " not deleted")
+		return errors.New("not hard deleted")
 	}
 
 	return nil
 }
 
 // ExistsInTable: If exists, return "nil".
-func (db *DB) ExistsInTable(table string, conditions map[string]any) error {
-	rowCount, err := db.count(table, conditions)
+func (db *DB) ExistsInTable(builder *mstgnz.GoBuilder) error {
+	rowCount, err := db.count(builder)
 	if err != nil {
 		return err
 	}
 	if rowCount == 0 {
-		return fmt.Errorf("no record with provided conditions exists in table %s", table)
+		return fmt.Errorf("no record with provided conditions exists in table")
 	}
 	return nil
 }
 
 // NotExistsInTable: If not exists, return "nil".
-func (db *DB) NotExistsInTable(table string, conditions map[string]any) error {
-	rowCount, err := db.count(table, conditions)
+func (db *DB) NotExistsInTable(builder *mstgnz.GoBuilder) error {
+	rowCount, err := db.count(builder)
 	if err != nil {
 		return err
 	}
 	if rowCount > 0 {
-		return fmt.Errorf("record with provided conditions already exists in table %s", table)
+		return fmt.Errorf("record with provided conditions already exists in table")
 	}
 	return nil
 }
 
-func (db *DB) count(table string, conditions map[string]any) (int, error) {
+func (db *DB) count(builder *mstgnz.GoBuilder) (int, error) {
 	rowCount := 0
-	if len(conditions) == 0 {
-		return rowCount, fmt.Errorf("no conditions provided")
-	}
 
-	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE ", table)
-	params := []any{}
-	clauses := []string{}
-
-	// create conditions
-	paramIndex := 1
-	for column, value := range conditions {
-		clauses = append(clauses, fmt.Sprintf("%s=$%d", column, paramIndex))
-		params = append(params, value)
-		paramIndex++
-	}
-
-	// append conditions
-	query += strings.Join(clauses, " AND ")
+	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
