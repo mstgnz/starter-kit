@@ -7,13 +7,6 @@ import (
 	"strings"
 )
 
-const (
-	InnerJoin = "INNER"
-	LeftJoin  = "LEFT"
-	RightJoin = "RIGHT"
-	FullJoin  = "FULL"
-)
-
 type SQLDialect string
 
 const (
@@ -204,8 +197,22 @@ func (gb *GoBuilder) Having(condition string, args ...any) *GoBuilder {
 }
 
 // Join adds a JOIN clause
-func (gb *GoBuilder) Join(joinType, table, condition string) *GoBuilder {
-	join := fmt.Sprintf("%s JOIN %s ON %s", joinType, table, condition)
+func (gb *GoBuilder) Join(table, first, operator, last string) *GoBuilder {
+	join := fmt.Sprintf("INNER JOIN %s ON %s %s %s", table, first, operator, last)
+	gb.joinClauses = append(gb.joinClauses, join)
+	return gb
+}
+
+// LeftJoin adds a LEFT JOIN clause
+func (gb *GoBuilder) LeftJoin(table, first, operator, last string) *GoBuilder {
+	join := fmt.Sprintf("LEFT JOIN %s ON %s %s %s", table, first, operator, last)
+	gb.joinClauses = append(gb.joinClauses, join)
+	return gb
+}
+
+// RightJoin adds a RIGHT JOIN clause
+func (gb *GoBuilder) RightJoin(table, first, operator, last string) *GoBuilder {
+	join := fmt.Sprintf("RIGHT JOIN %s ON %s %s %s", table, first, operator, last)
 	gb.joinClauses = append(gb.joinClauses, join)
 	return gb
 }
