@@ -14,7 +14,7 @@ type Config struct {
 	DB        *conn.DB
 	Mail      *mstgnz.Mail
 	Cache     *mstgnz.Cache
-	Gobuilder *mstgnz.GoBuilder
+	Builder   *mstgnz.GoBuilder
 	Kafka     *conn.Kafka
 	Redis     *conn.Redis
 	Validator *validator.Validate
@@ -31,8 +31,8 @@ func App() *Config {
 	if instance == nil {
 		instance = &Config{
 			DB:        &conn.DB{},
-			Cache:     &mstgnz.Cache{},
-			Gobuilder: &mstgnz.GoBuilder{},
+			Cache:     mstgnz.NewCache(),
+			Builder:   mstgnz.NewGoBuilder(mstgnz.Postgres),
 			Kafka:     &conn.Kafka{},
 			Redis:     &conn.Redis{},
 			Validator: validator.New(),
@@ -52,6 +52,8 @@ func App() *Config {
 		}
 		// Connect to Postgres DB
 		instance.DB.ConnectDatabase()
+		//instance.Kafka.ConnectKafka()
+		//instance.Redis.ConnectRedis()
 	}
 	return instance
 }

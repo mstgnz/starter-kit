@@ -12,7 +12,7 @@ type Kafka struct {
 	sarama.SyncProducer
 }
 
-func (k *Kafka) NewKafka() {
+func (k *Kafka) ConnectKafka() {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
 	config.Producer.RequiredAcks = sarama.WaitForAll
