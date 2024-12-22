@@ -30,6 +30,7 @@ This repository is a starter kit designed to provide a foundational structure fo
         bcrypt.go   - Handles password hashing and verification using bcrypt.
         jwt.go      - Manages JWT (JSON Web Token) creation, parsing, and validation.
     /config
+        catch.go    - Central error handling
         conf.go     - Centralizes and manages application-wide dependencies and services.
         routes.go   - Generate route list with localization
     /conn
@@ -37,8 +38,9 @@ This repository is a starter kit designed to provide a foundational structure fo
         kafka.go    - Handles Kafka messaging system connections and operations.
         redis.go    - Manages Redis connections and operations.
     /load
-        sql.go      - Loads and manages SQL queries or scripts.
+        excel.go    - Exelize package
         render.go   - Render templ template 
+        sql.go      - Loads and manages SQL queries or scripts.
     /localization
         localization.go - Localization for use in template
     /logger
@@ -51,10 +53,10 @@ This repository is a starter kit designed to provide a foundational structure fo
 /model
     - Contains the data models and entities that represent the structure of the data used in the application.
 /pkg
-    /cache
-        cache.go    - Implements caching mechanisms, potentially using technologies like Redis.
-    /mail
-        mail.go     - Manages email sending functionalities.
+    /mstgnz
+        cache.go        - Implements caching mechanisms, potentially using technologies like Redis.
+        gobuilder.go    - With SQL builder  you can write your sql queries in a readable way.
+        mail.go         - Manages email sending functionalities.
 /service
     - Contains business logic and application services that orchestrate operations between handlers, models, and other packages.
 /view
