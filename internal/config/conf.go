@@ -5,16 +5,18 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mstgnz/starter-kit/internal/conn"
-	"github.com/mstgnz/starter-kit/pkg/mstgnz"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz/cache"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz/gobuilder"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz/mail"
 )
 
 type CKey string
 
 type Config struct {
 	DB        *conn.DB
-	Mail      *mstgnz.Mail
-	Cache     *mstgnz.Cache
-	Builder   *mstgnz.GoBuilder
+	Mail      *mail.Mail
+	Cache     *cache.Cache
+	Builder   *gobuilder.GoBuilder
 	Kafka     *conn.Kafka
 	Redis     *conn.Redis
 	Validator *validator.Validate
@@ -31,8 +33,8 @@ func App() *Config {
 	if instance == nil {
 		instance = &Config{
 			DB:        &conn.DB{},
-			Cache:     mstgnz.NewCache(),
-			Builder:   mstgnz.NewGoBuilder(mstgnz.Postgres),
+			Cache:     cache.NewCache(),
+			Builder:   gobuilder.NewGoBuilder(gobuilder.Postgres),
 			Kafka:     &conn.Kafka{},
 			Redis:     &conn.Redis{},
 			Validator: validator.New(),
@@ -41,7 +43,7 @@ func App() *Config {
 			Lang:      "tr",
 			Langs:     []string{"tr", "en"},
 			Routes:    make(map[string]map[string]string),
-			Mail: &mstgnz.Mail{
+			Mail: &mail.Mail{
 				From: os.Getenv("MAIL_FROM"),
 				Name: os.Getenv("MAIL_FROM_NAME"),
 				Host: os.Getenv("MAIL_HOST"),

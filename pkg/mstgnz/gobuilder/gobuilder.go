@@ -1,10 +1,11 @@
-package mstgnz
+package gobuilder
 
 import (
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 type SQLDialect string
@@ -16,6 +17,9 @@ const (
 	SQLServer SQLDialect = "sqlserver"
 	Oracle    SQLDialect = "oracle"
 )
+
+// Default time for query statute of limitations, you can change this value for each query as you need.
+var Timeout time.Duration = 30
 
 // https://github.com/mstgnz/gobuilder
 type GoBuilder struct {

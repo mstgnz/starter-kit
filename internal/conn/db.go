@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -11,7 +12,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/mstgnz/starter-kit/pkg/mstgnz"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz/gobuilder"
 )
 
 type DB struct {
@@ -49,7 +50,7 @@ func (db *DB) CloseDatabase() {
 }
 
 // QueryExec: returns nil if the query is executed successfully
-func (db *DB) QueryExec(builder *mstgnz.GoBuilder) error {
+func (db *DB) QueryExec(builder *gobuilder.GoBuilder) error {
 	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
@@ -57,7 +58,9 @@ func (db *DB) QueryExec(builder *mstgnz.GoBuilder) error {
 		return err
 	}
 
-	result, err := stmt.Exec(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	result, err := stmt.ExecContext(ctx, params...)
 	if err != nil {
 		return err
 	}
@@ -78,7 +81,7 @@ func (db *DB) QueryExec(builder *mstgnz.GoBuilder) error {
 }
 
 // DynamicCount: returns the number of data according to the conditions
-func (db *DB) DynamicCount(builder *mstgnz.GoBuilder) (int, error) {
+func (db *DB) DynamicCount(builder *gobuilder.GoBuilder) (int, error) {
 	rowCount := 0
 
 	query, params := builder.Prepare()
@@ -88,7 +91,9 @@ func (db *DB) DynamicCount(builder *mstgnz.GoBuilder) (int, error) {
 		return rowCount, err
 	}
 
-	rows, err := stmt.Query(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	rows, err := stmt.QueryContext(ctx, params...)
 	if err != nil {
 		return rowCount, err
 	}
@@ -107,7 +112,7 @@ func (db *DB) DynamicCount(builder *mstgnz.GoBuilder) (int, error) {
 }
 
 // DynamicFind: only renders the first matching record to the p.Model object based on the conditions
-func (db *DB) DynamicFind(builder *mstgnz.GoBuilder, model any) error {
+func (db *DB) DynamicFind(builder *gobuilder.GoBuilder, model any) error {
 	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
@@ -115,7 +120,9 @@ func (db *DB) DynamicFind(builder *mstgnz.GoBuilder, model any) error {
 		return err
 	}
 
-	rows, err := stmt.Query(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	rows, err := stmt.QueryContext(ctx, params...)
 	if err != nil {
 		return err
 	}
@@ -166,7 +173,7 @@ func (db *DB) DynamicFind(builder *mstgnz.GoBuilder, model any) error {
 }
 
 // DynamicGet: returns all records it finds
-func (db *DB) DynamicGet(builder *mstgnz.GoBuilder, model any) ([]any, error) {
+func (db *DB) DynamicGet(builder *gobuilder.GoBuilder, model any) ([]any, error) {
 	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
@@ -174,7 +181,9 @@ func (db *DB) DynamicGet(builder *mstgnz.GoBuilder, model any) ([]any, error) {
 		return nil, err
 	}
 
-	rows, err := stmt.Query(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	rows, err := stmt.QueryContext(ctx, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +235,7 @@ func (db *DB) DynamicGet(builder *mstgnz.GoBuilder, model any) ([]any, error) {
 }
 
 // DynamicPaginate: returns all records according to the conditions
-func (db *DB) DynamicPaginate(builder *mstgnz.GoBuilder, model any) ([]any, error) {
+func (db *DB) DynamicPaginate(builder *gobuilder.GoBuilder, model any) ([]any, error) {
 	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
@@ -234,7 +243,9 @@ func (db *DB) DynamicPaginate(builder *mstgnz.GoBuilder, model any) ([]any, erro
 		return nil, err
 	}
 
-	rows, err := stmt.Query(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	rows, err := stmt.QueryContext(ctx, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +297,7 @@ func (db *DB) DynamicPaginate(builder *mstgnz.GoBuilder, model any) ([]any, erro
 }
 
 // DynamicCreate: the specified values are recorded in the specified table.
-func (db *DB) DynamicCreate(builder *mstgnz.GoBuilder) (int, error) {
+func (db *DB) DynamicCreate(builder *gobuilder.GoBuilder) (int, error) {
 	var id int
 	query, params := builder.Prepare()
 	query += " RETURNING id;"
@@ -296,7 +307,9 @@ func (db *DB) DynamicCreate(builder *mstgnz.GoBuilder) (int, error) {
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(params...).Scan(&id)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	err = stmt.QueryRowContext(ctx, params...).Scan(&id)
 	if err != nil {
 		return id, err
 	}
@@ -305,7 +318,7 @@ func (db *DB) DynamicCreate(builder *mstgnz.GoBuilder) (int, error) {
 }
 
 // DynamicUpdate: the values specified in the table are updated.
-func (db *DB) DynamicUpdate(builder *mstgnz.GoBuilder) error {
+func (db *DB) DynamicUpdate(builder *gobuilder.GoBuilder) error {
 	query, params := builder.Prepare()
 
 	stmt, err := db.Prepare(query)
@@ -314,7 +327,9 @@ func (db *DB) DynamicUpdate(builder *mstgnz.GoBuilder) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	_, err = stmt.ExecContext(ctx, params...)
 	if err != nil {
 		return err
 	}
@@ -323,7 +338,7 @@ func (db *DB) DynamicUpdate(builder *mstgnz.GoBuilder) error {
 }
 
 // SoftDelete: soft delete the specified id in the specified table.
-func (db *DB) SoftDelete(builder *mstgnz.GoBuilder) error {
+func (db *DB) SoftDelete(builder *gobuilder.GoBuilder) error {
 	query, params := builder.Prepare()
 
 	deleteAndUpdate := time.Now().Format("2006-01-02 15:04:05")
@@ -336,7 +351,9 @@ func (db *DB) SoftDelete(builder *mstgnz.GoBuilder) error {
 		return err
 	}
 
-	result, err := stmt.Exec(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	result, err := stmt.ExecContext(ctx, params...)
 	if err != nil {
 		return err
 	}
@@ -357,7 +374,7 @@ func (db *DB) SoftDelete(builder *mstgnz.GoBuilder) error {
 }
 
 // HardDelete: hard delete the specified id in the specified table.
-func (db *DB) HardDelete(builder *mstgnz.GoBuilder) error {
+func (db *DB) HardDelete(builder *gobuilder.GoBuilder) error {
 
 	query, params := builder.Prepare()
 
@@ -366,7 +383,9 @@ func (db *DB) HardDelete(builder *mstgnz.GoBuilder) error {
 		return err
 	}
 
-	result, err := stmt.Exec(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	result, err := stmt.ExecContext(ctx, params...)
 	if err != nil {
 		return err
 	}
@@ -387,7 +406,7 @@ func (db *DB) HardDelete(builder *mstgnz.GoBuilder) error {
 }
 
 // ExistsInTable: If exists, return "nil".
-func (db *DB) ExistsInTable(builder *mstgnz.GoBuilder) error {
+func (db *DB) ExistsInTable(builder *gobuilder.GoBuilder) error {
 	rowCount, err := db.count(builder)
 	if err != nil {
 		return err
@@ -399,7 +418,7 @@ func (db *DB) ExistsInTable(builder *mstgnz.GoBuilder) error {
 }
 
 // NotExistsInTable: If not exists, return "nil".
-func (db *DB) NotExistsInTable(builder *mstgnz.GoBuilder) error {
+func (db *DB) NotExistsInTable(builder *gobuilder.GoBuilder) error {
 	rowCount, err := db.count(builder)
 	if err != nil {
 		return err
@@ -410,7 +429,7 @@ func (db *DB) NotExistsInTable(builder *mstgnz.GoBuilder) error {
 	return nil
 }
 
-func (db *DB) count(builder *mstgnz.GoBuilder) (int, error) {
+func (db *DB) count(builder *gobuilder.GoBuilder) (int, error) {
 	rowCount := 0
 
 	query, params := builder.Prepare()
@@ -420,7 +439,9 @@ func (db *DB) count(builder *mstgnz.GoBuilder) (int, error) {
 		return rowCount, err
 	}
 
-	rows, err := stmt.Query(params...)
+	ctx, cancel := context.WithTimeout(context.Background(), gobuilder.Timeout*time.Second)
+	defer cancel()
+	rows, err := stmt.QueryContext(ctx, params...)
 	if err != nil {
 		return rowCount, err
 	}

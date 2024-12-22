@@ -1,4 +1,4 @@
-package mstgnz
+package cache
 
 import (
 	"fmt"

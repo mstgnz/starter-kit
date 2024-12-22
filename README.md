@@ -54,9 +54,12 @@ This repository is a starter kit designed to provide a foundational structure fo
     - Contains the data models and entities that represent the structure of the data used in the application.
 /pkg
     /mstgnz
-        cache.go        - Implements caching mechanisms, potentially using technologies like Redis.
-        gobuilder.go    - With SQL builder  you can write your sql queries in a readable way.
-        mail.go         - Manages email sending functionalities.
+        /cache
+            cache.go    - Implements caching mechanisms, potentially using technologies like Redis.
+        /gobuilder
+            gobuilder.go - With SQL builder  you can write your sql queries in a readable way.
+        /mail
+            mail.go     - Manages email sending functionalities.
 /service
     - Contains business logic and application services that orchestrate operations between handlers, models, and other packages.
 /view

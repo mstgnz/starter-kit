@@ -1,4 +1,4 @@
-package mstgnz
+package mail
 
 import (
 	"crypto/tls"
