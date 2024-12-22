@@ -69,8 +69,8 @@ func (gb *GoBuilder) SelectDistinct(columns ...string) *GoBuilder {
 	return gb
 }
 
-// Insert adds an INSERT INTO statement to the query with bind parameters
-func (gb *GoBuilder) Insert(args map[string]any) *GoBuilder {
+// Create adds an INSERT INTO statement to the query with bind parameters
+func (gb *GoBuilder) Create(args map[string]any, returning ...string) *GoBuilder {
 	if len(args) != 0 {
 		keys := make([]string, 0, len(args))
 		for key := range args {
@@ -91,6 +91,9 @@ func (gb *GoBuilder) Insert(args map[string]any) *GoBuilder {
 			strings.Join(columns, ", "),
 			strings.Join(values, ", "),
 		)
+		if len(returning) > 0 {
+			gb.selectClause += fmt.Sprintf(" RETURNING %s", strings.Join(returning, ", "))
+		}
 	}
 	return gb
 }
