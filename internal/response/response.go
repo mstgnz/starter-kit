@@ -1,13 +1,13 @@
 package response
 
 type Response struct {
-	Status  bool           `json:"status"`
+	Success bool           `json:"success"`
 	Message string         `json:"message"`
 	Data    map[string]any `json:"data"`
 }
 
-func (r *Response) SetStatus(status bool) *Response {
-	r.Status = status
+func (r *Response) SetSuccess(success bool) *Response {
+	r.Success = success
 	return r
 }
 
