@@ -21,6 +21,7 @@ type Config struct {
 	Redis     *conn.Redis
 	Validator *validator.Validate
 	SecretKey string
+	Token     string
 	QUERY     map[string]string
 	Lang      string
 	Langs     []string
