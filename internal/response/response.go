@@ -1,5 +1,7 @@
 package response
 
+import "encoding/json"
+
 type Response struct {
 	Success bool           `json:"success"`
 	Message string         `json:"message"`
@@ -19,4 +21,17 @@ func (r *Response) SetMessage(message string) *Response {
 func (r *Response) SetData(key string, value any) *Response {
 	r.Data[key] = value
 	return r
+}
+
+func (r *Response) SetModel(model any, key string) error {
+	data, err := json.Marshal(r.Data[key])
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(data, &model)
+	if err != nil {
+		return err
+	}
+	return nil
 }
