@@ -2,23 +2,26 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 type GraphQLService struct {
 	url     string
 	wsURL   string
 	query   string
+	model   any
 	headers map[string]string
-	params  map[string]any
+	vars    map[string]any
 	conn    *websocket.Conn
 }
 
@@ -35,8 +38,18 @@ type wsMessage struct {
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
+type GraphQLError struct {
+	Message string   `json:"message"`
+	Path    []string `json:"path"`
+}
+
+type GraphQLResponse struct {
+	Data   any            `json:"data"`
+	Errors []GraphQLError `json:"errors"`
+}
+
 // New creates a new GraphQLService instance
-func NewGql() *GraphQLService {
+func NewGql(model any) *GraphQLService {
 	apiURL := os.Getenv("GQL_URL")
 	wsURL := strings.Replace(apiURL, "http", "ws", 1)
 
@@ -44,7 +57,8 @@ func NewGql() *GraphQLService {
 		url:     apiURL,
 		wsURL:   wsURL,
 		headers: make(map[string]string),
-		params:  make(map[string]any),
+		vars:    make(map[string]any),
+		model:   model,
 	}
 }
 
@@ -65,16 +79,21 @@ func (g *GraphQLService) WithToken(token string) *GraphQLService {
 // WithVariables adds variables to the GraphQL query
 func (g *GraphQLService) WithVariables(vars map[string]any) *GraphQLService {
 	for k, v := range vars {
-		g.params[k] = v
+		g.vars[k] = v
 	}
 	return g
 }
 
 // Subscribe creates a WebSocket connection and subscribes to a GraphQL subscription
-func (g *GraphQLService) Subscribe(subscription string, callback func(response *response.Response)) error {
+func (g *GraphQLService) Subscribe(subscription string, callback func(model any)) error {
 	if g.conn == nil {
+		if g.headers["Authorization"] == "" {
+			g.headers["Authorization"] = "Bearer " + config.App().Token
+		}
+
 		dialer := websocket.Dialer{
 			EnableCompression: true,
+			HandshakeTimeout:  time.Second * 10,
 		}
 
 		header := http.Header{}
@@ -102,7 +121,7 @@ func (g *GraphQLService) Subscribe(subscription string, callback func(response *
 		ID:        "1", // You might want to generate unique IDs
 		Type:      "start",
 		Query:     subscription,
-		Variables: g.params,
+		Variables: g.vars,
 	}
 
 	if err := g.conn.WriteJSON(subscriptionMsg); err != nil {
@@ -125,11 +144,10 @@ func (g *GraphQLService) Subscribe(subscription string, callback func(response *
 
 			switch msg.Type {
 			case "data":
-				var resp response.Response
-				if err := json.Unmarshal(msg.Payload, &resp); err != nil {
+				if err := json.Unmarshal(msg.Payload, &g.model); err != nil {
 					continue
 				}
-				callback(&resp)
+				callback(g.model)
 			case "complete":
 				g.conn.Close()
 				g.conn = nil
@@ -163,31 +181,35 @@ func (g *GraphQLService) Unsubscribe() error {
 }
 
 // Query executes a GraphQL query
-func (g *GraphQLService) Query(query string) (*response.Response, error) {
+func (g *GraphQLService) Query(query string) error {
 	g.query = query
 	return g.execute()
 }
 
 // Mutation executes a GraphQL mutation
-func (g *GraphQLService) Mutation(mutation string) (*response.Response, error) {
+func (g *GraphQLService) Mutation(mutation string) error {
 	g.query = mutation
 	return g.execute()
 }
 
-func (g *GraphQLService) execute() (*response.Response, error) {
+func (g *GraphQLService) execute() error {
 	reqBody := graphQLRequest{
 		Query:     g.query,
-		Variables: g.params,
+		Variables: g.vars,
 	}
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("json marshal error: %v", err)
+		return fmt.Errorf("json marshal error: %v", err)
 	}
 
 	req, err := http.NewRequest("POST", g.url, bytes.NewBuffer(jsonBody))
 	if err != nil {
-		return nil, fmt.Errorf("create request error: %v", err)
+		return fmt.Errorf("create request error: %v", err)
+	}
+
+	if g.headers["Authorization"] == "" {
+		g.headers["Authorization"] = "Bearer " + config.App().Token
 	}
 
 	// Set default headers
@@ -201,97 +223,93 @@ func (g *GraphQLService) execute() (*response.Response, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request error: %v", err)
+		return fmt.Errorf("request error: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read response error: %v", err)
+		return fmt.Errorf("read response error: %v", err)
 	}
 
-	var result response.Response
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("json unmarshal error: %v", err)
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+
+	var result map[string]any
+	if err := decoder.Decode(&result); err != nil {
+		return fmt.Errorf("json decode error: %v", err)
+	}
+
+	// Convert the decoded data back to JSON with proper time format
+	formattedJSON, err := json.Marshal(result)
+	if err != nil {
+		return fmt.Errorf("json marshal error: %v", err)
+	}
+
+	if err := json.Unmarshal(formattedJSON, &g.model); err != nil {
+		return fmt.Errorf("json unmarshal error: %v", err)
 	}
 
 	g.reset()
-	return &result, nil
+	return nil
 }
 
 func (g *GraphQLService) reset() {
 	g.query = ""
-	g.params = make(map[string]any)
+	g.model = nil
+	g.vars = make(map[string]any)
 	g.headers = make(map[string]string)
+}
+
+// QueryWithContext executes a GraphQL query with context
+func (g *GraphQLService) QueryWithContext(ctx context.Context, query string) error {
+	// context kullanımı
+	return nil
 }
 
 // EXAMPLE
 /*
 
-type Town struct {
-    ID   string `json:"id"`
-    Name string `json:"name"`
-}
+	type FacilityResponse struct {
+		Data struct {
+			Facilities []model.Facility `json:"facilities"`
+		} `json:"data"`
+	}
 
-type District struct {
-    ID    string `json:"id"`
-    Name  string `json:"name"`
-    Towns []Town `json:"towns"`
-}
+	var facilityResponse FacilityResponse
+	gql := api.NewGql(&facilityResponse)
 
-type City struct {
-    ID        string     `json:"id"`
-    Name      string     `json:"name"`
-    Districts []District `json:"districts"`
-}
+	query := `
+		query MyQuery {
+			facilities {
+				id
+				facility_documents {
+					id
+					document {
+						id
+						name
+						document
+						created_at
+						updated_at
+					}
+				}
+				facility_translations(where: {language: {code: {_eq: "en"}}}) {
+					id
+					title
+					description
+				}
+			}
+		}
+	`
 
-type Country struct {
-    ID      string `json:"id"`
-    Name    string `json:"name"`
-    Cities  []City `json:"cities"`
-}
+	err = gql.Query(query)
+	if err != nil {
+		log.Printf("GraphQL Query Error: %v", err)
+		return err
+	}
 
-type LocationResponse struct {
-    Countries []Country `json:"countries"`
-}
+	log.Println(facilityResponse.Data.Facilities[0].FacilityTranslations[0].Title)
 
-graphqlService := api.NewGql()
 
-query := `
-    query MyQuery($_eq: smallint) {
-        countries {
-            id
-            name
-            cities(where: {id: {_eq: $_eq}}) {
-                id
-                name
-                districts {
-                    id
-                    name
-                    towns {
-                        id
-                        name
-                    }
-                }
-            }
-        }
-    }
-
-	variables := map[string]any{
-        "_eq": 34
-    }
-
-	response, err := graphqlService.
-        WithVariables(variables).
-        Query(query)
-
-    if err != nil {
-        log.Fatalf("Query error: %v", err)
-    }
-
-	var locationData LocationResponse
-    if err := json.Unmarshal(response.Data, &locationData); err != nil {
-        log.Fatalf("JSON unmarshal error: %v", err)
-    }
 
 */
