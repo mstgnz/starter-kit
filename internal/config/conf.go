@@ -13,10 +13,10 @@ import (
 	"github.com/cemilsahin/arabamtaksit/internal/conn"
 	"github.com/cemilsahin/arabamtaksit/internal/response"
 	"github.com/cemilsahin/arabamtaksit/pkg/mstgnz/cache"
-	"github.com/cemilsahin/arabamtaksit/pkg/mstgnz/gobuilder"
 	"github.com/cemilsahin/arabamtaksit/pkg/mstgnz/mail"
 	"github.com/go-playground/validator/v10"
 	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 )
 
 var (
@@ -29,28 +29,25 @@ var (
 type CKey string
 
 type config struct {
-	DB        *conn.DB
+	DB        *gorm.DB
 	Mail      *mail.Mail
 	Cron      *cron.Cron
 	Cache     *cache.Cache
 	Redis     *conn.Redis
-	Builder   *gobuilder.GoBuilder
 	Validator *validator.Validate
 	SecretKey string
-	QUERY     map[string]string
 	Running   int
 	Shutting  bool
-	LangCodes []string
+	Token     string
 }
 
 func App() *config {
 	once.Do(func() {
 		instance = &config{
-			DB:        &conn.DB{},
+			DB:        &gorm.DB{},
 			Redis:     &conn.Redis{},
 			Cron:      cron.New(),
 			Cache:     cache.NewCache(),
-			Builder:   gobuilder.NewGoBuilder(gobuilder.Postgres),
 			Validator: validator.New(),
 			// the secret key will change every time the application is restarted.
 			SecretKey: os.Getenv("JWT_SECRET"), //RandomString(8),
@@ -64,7 +61,7 @@ func App() *config {
 			},
 		}
 		// Connect to Postgres DB
-		instance.DB.ConnectDatabase()
+		instance.DB = conn.ConnectDatabase()
 		instance.Redis.ConnectRedis()
 	})
 	return instance

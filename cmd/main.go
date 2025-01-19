@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/cemilsahin/arabamtaksit/internal/config"
+	"github.com/cemilsahin/arabamtaksit/internal/conn"
 	"github.com/cemilsahin/arabamtaksit/internal/logger"
 	"github.com/cemilsahin/arabamtaksit/internal/response"
 	"github.com/cemilsahin/arabamtaksit/internal/validate"
@@ -44,11 +45,6 @@ func init() {
 type HttpHandler func(w http.ResponseWriter, r *http.Request) error
 
 func main() {
-
-	defer func() {
-		config.App().Redis.CloseRedis()
-		config.App().DB.CloseDatabase()
-	}()
 
 	// Chi Define Routes
 	r := chi.NewRouter()
@@ -120,7 +116,8 @@ func main() {
 
 	config.App().Cron.Stop()
 	logger.Info("Shutting down gracefully...")
-	config.App().DB.CloseDatabase()
+	config.App().Redis.CloseRedis()
+	conn.CloseDatabase(config.App().DB)
 }
 
 func fileServer(r chi.Router, path string, root http.FileSystem) {
