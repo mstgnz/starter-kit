@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cemilsahin/arabamtaksit/internal/config"
 	"github.com/gorilla/websocket"
-	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 type GraphQLService struct {

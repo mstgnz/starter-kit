@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cemilsahin/arabamtaksit/pkg/mstgnz/gobuilder"
 	_ "github.com/lib/pq"
-	"github.com/mstgnz/starter-kit/pkg/mstgnz/gobuilder"
 )
 
 type DB struct {

@@ -3,7 +3,7 @@ package middle
 import (
 	"net/http"
 
-	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/cemilsahin/arabamtaksit/internal/response"
 )
 
 func HeaderMiddleware(next http.Handler) http.Handler {

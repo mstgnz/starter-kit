@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cemilsahin/arabamtaksit/internal/config"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 var letterRunes = []rune("0987654321abcçdefgğhıijklmnoöpqrsştuüvwxyzABCÇDEFGĞHIİJKLMNOÖPQRSTUÜVWXYZ-_!?+&%=*")

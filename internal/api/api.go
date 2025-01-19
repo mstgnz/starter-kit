@@ -14,8 +14,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mstgnz/starter-kit/internal/config"
-	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/cemilsahin/arabamtaksit/internal/config"
+	"github.com/cemilsahin/arabamtaksit/internal/response"
 )
 
 type ApiService struct {

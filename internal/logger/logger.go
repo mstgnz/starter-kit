@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mstgnz/starter-kit/internal/config"
+	"github.com/cemilsahin/arabamtaksit/internal/config"
 )
 
 func logToDB(level string, message string) {

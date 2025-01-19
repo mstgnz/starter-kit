@@ -7,10 +7,18 @@ import (
 type UserHandler struct {
 }
 
-func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) error {
+func NewUserHandler() *UserHandler {
+	return &UserHandler{}
+}
+
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (h *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) error {
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+func (h *UserHandler) Verify(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

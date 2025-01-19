@@ -8,7 +8,7 @@ type Response struct {
 	Data    map[string]any `json:"data"`
 }
 
-func (r *Response) SetSuccess(success bool) *Response {
+func (r *Response) SetStatus(success bool) *Response {
 	r.Success = success
 	return r
 }
@@ -34,4 +34,13 @@ func (r *Response) SetModel(model any, key string) error {
 		return err
 	}
 	return nil
+}
+
+type Paginate struct {
+	Total    int
+	Row      int
+	Size     int
+	Current  int
+	Next     int
+	Previous int
 }

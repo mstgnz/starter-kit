@@ -6,31 +6,26 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/cemilsahin/arabamtaksit/internal/config"
+	"github.com/cemilsahin/arabamtaksit/internal/logger"
+	"github.com/cemilsahin/arabamtaksit/internal/response"
+	"github.com/cemilsahin/arabamtaksit/internal/validate"
+	"github.com/cemilsahin/arabamtaksit/middle"
+	"github.com/cemilsahin/arabamtaksit/router/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
-	"github.com/mstgnz/starter-kit/handler"
-	"github.com/mstgnz/starter-kit/internal/auth"
-	"github.com/mstgnz/starter-kit/internal/config"
-	"github.com/mstgnz/starter-kit/internal/load"
-	"github.com/mstgnz/starter-kit/internal/localization"
-	"github.com/mstgnz/starter-kit/internal/logger"
-	"github.com/mstgnz/starter-kit/internal/response"
-	"github.com/mstgnz/starter-kit/internal/validate"
-	"github.com/mstgnz/starter-kit/model"
 )
 
 var (
 	PORT string
-
-	userHandler = handler.UserHandler{}
-	homeHandler = handler.HomeHandler{}
 )
 
 func init() {
@@ -43,23 +38,6 @@ func init() {
 	_ = config.App()
 	validate.CustomValidate()
 
-	// Load Sql
-	config.App().QUERY = make(map[string]string)
-	if query, err := load.LoadSQLQueries(); err != nil {
-		logger.Warn(fmt.Sprintf("Load Sql Error: %v", err))
-		log.Fatalf("Load Sql Error: %v", err)
-	} else {
-		config.App().QUERY = query
-	}
-
-	// Load Translation
-	localization.LoadTranslations()
-	//log.Println(localization.Translations["en"]["routes"])
-
-	// Load Routes
-	config.LoadRoutesFromJSON()
-	//log.Println(config.App().Routes["home"]["tr"])
-
 	PORT = os.Getenv("APP_PORT")
 }
 
@@ -69,7 +47,6 @@ func main() {
 
 	defer func() {
 		config.App().Redis.CloseRedis()
-		config.App().Kafka.CloseKafka()
 		config.App().DB.CloseDatabase()
 	}()
 
@@ -96,149 +73,54 @@ func main() {
 	workDir, _ := os.Getwd()
 	fileServer(r, "/asset", http.Dir(filepath.Join(workDir, "asset")))
 
-	// swagger
-	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./view/swagger.html")
-	})
-
-	// web without auth
+	// handler for web
 	r.Group(func(r chi.Router) {
-		r.Use(isAuthMiddleware)
-		for _, lang := range config.App().Langs {
-			r.Get(config.App().Routes["login"][lang], config.Catch(userHandler.LoginHandler))
-			r.Get(config.App().Routes["register"][lang], config.Catch(userHandler.RegisterHandler))
-		}
-		r.Post("/login", config.Catch(userHandler.LoginHandler))
-		r.Post("/register", config.Catch(userHandler.RegisterHandler))
-	})
-
-	// web with auth
-	r.Group(func(r chi.Router) {
-		r.Use(webAuthMiddleware)
-		for _, lang := range config.App().Langs {
-			r.Get(config.App().Routes["home"][lang], config.Catch(homeHandler.HomeHandler))
-		}
-	})
-
-	// api without auth
-	r.With(headerMiddleware).Post("/api/login", config.Catch(userHandler.LoginHandler))
-	r.With(headerMiddleware).Post("/api/register", config.Catch(userHandler.RegisterHandler))
-
-	r.Route("/api", func(r chi.Router) {
-		r.Use(headerMiddleware)
-		r.Use(apiAuthMiddleware)
-
+		r.Use(middle.HeaderMiddleware)
+		web.WebRoutes(r)
 	})
 
 	// Not Found
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "api") {
-			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: "Not Found"})
-			return
-		}
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		_ = response.WriteJSON(w, http.StatusNotFound, response.Response{Success: false, Message: "Not Found"})
 	})
 
-	err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), r)
-	if err != nil && err != http.ErrServerClosed {
-		log.Fatal(err.Error())
+	// Create a context that listens for interrupt and terminate signals
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
+	defer stop()
+
+	// Run your HTTP server in a goroutine
+	go func() {
+		err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), r)
+		if err != nil && err != http.ErrServerClosed {
+			logger.Warn("Fatal Error", "err", err.Error())
+			log.Fatal(err.Error())
+		}
+	}()
+
+	logger.Info("API is running on", PORT)
+
+	// Block until a signal is received
+	<-ctx.Done()
+
+	logger.Info("API is shutting on", PORT)
+
+	// set Shutting
+	config.App().Shutting = true
+
+	// check Running
+	for {
+		if config.App().Running <= 0 {
+			logger.Info("Cronjobs all done")
+			break
+		} else {
+			logger.Info(fmt.Sprintf("Currently %d active jobs in progress. pending completion...", config.App().Running))
+		}
+		time.Sleep(time.Second * 5)
 	}
-}
 
-func isAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("Authorization")
-
-		if err == nil {
-			token := strings.Replace(cookie.Value, "Bearer ", "", 1)
-			_, err = auth.GetUserIDByToken(token)
-			if err == nil {
-				http.Redirect(w, r, "/", http.StatusSeeOther)
-				return
-			}
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func webAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("Authorization")
-
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-		token := strings.Replace(cookie.Value, "Bearer ", "", 1)
-
-		userId, err := auth.GetUserIDByToken(token)
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		user_id, err := strconv.Atoi(userId)
-		if err != nil && user_id == 0 {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		user := &model.User{}
-		err = user.GetWithId(user_id)
-
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), config.CKey("user"), user)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func apiAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
-			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: "Invalid Token"})
-			return
-		}
-		token = strings.Replace(token, "Bearer ", "", 1)
-
-		userId, err := auth.GetUserIDByToken(token)
-		if err != nil {
-			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: err.Error()})
-			return
-		}
-
-		user_id, err := strconv.Atoi(userId)
-		if err != nil && user_id == 0 {
-			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: err.Error()})
-			return
-		}
-
-		user := &model.User{}
-		err = user.GetWithId(user_id)
-
-		if err != nil {
-			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: err.Error()})
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), config.CKey("user"), user)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func headerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		checkMethod := r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH"
-		if checkMethod && r.Header.Get("Content-Type") != "application/json" {
-			_ = response.WriteJSON(w, http.StatusBadRequest, response.Response{Success: false, Message: "Invalid Content-Type"})
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+	config.App().Cron.Stop()
+	logger.Info("Shutting down gracefully...")
+	config.App().DB.CloseDatabase()
 }
 
 func fileServer(r chi.Router, path string, root http.FileSystem) {
