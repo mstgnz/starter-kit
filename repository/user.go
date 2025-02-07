@@ -17,13 +17,13 @@ func (r *UserRepository) Count(ctx context.Context) int {
 	rowCount := 0
 
 	// prepare count
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USERS_COUNT"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USERS_COUNT"])
 	if err != nil {
 		return rowCount
 	}
 
 	// query
-	rows, err := stmt.Query()
+	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		return rowCount
 	}
@@ -44,13 +44,13 @@ func (r *UserRepository) Get(ctx context.Context, offset, limit int, search stri
 	users := []*model.User{}
 
 	// prepare users paginate
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USERS_PAGINATE"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USERS_PAGINATE"])
 	if err != nil {
 		return users
 	}
 
 	// query
-	rows, err := stmt.Query("%"+search+"%", offset, limit)
+	rows, err := stmt.QueryContext(ctx, "%"+search+"%", offset, limit)
 	if err != nil {
 		return users
 	}
@@ -71,14 +71,14 @@ func (r *UserRepository) Get(ctx context.Context, offset, limit int, search stri
 
 func (r *UserRepository) Create(ctx context.Context, register *model.Register) (*model.User, error) {
 
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_INSERT"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_INSERT"])
 	if err != nil {
 		return nil, err
 	}
 
 	user := &model.User{}
 	hashPass := auth.HashAndSalt(register.Password)
-	err = stmt.QueryRow(register.Fullname, register.Email, hashPass, register.Phone).Scan(&user.ID, &user.Fullname, &user.Email, &user.Phone)
+	err = stmt.QueryRowContext(ctx, register.Fullname, register.Email, hashPass, register.Phone).Scan(&user.ID, &user.Fullname, &user.Email, &user.Phone)
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +90,13 @@ func (r *UserRepository) Exists(ctx context.Context, email string) (bool, error)
 	exists := 0
 
 	// prepare
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_EXISTS_WITH_EMAIL"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_EXISTS_WITH_EMAIL"])
 	if err != nil {
 		return false, err
 	}
 
 	// query
-	rows, err := stmt.Query(email)
+	rows, err := stmt.QueryContext(ctx, email)
 	if err != nil {
 		return false, err
 	}
@@ -116,13 +116,13 @@ func (r *UserRepository) IDExists(ctx context.Context, id int) (bool, error) {
 	exists := 0
 
 	// prepare
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_EXISTS_WITH_ID"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_EXISTS_WITH_ID"])
 	if err != nil {
 		return false, err
 	}
 
 	// query
-	rows, err := stmt.Query(id)
+	rows, err := stmt.QueryContext(ctx, id)
 	if err != nil {
 		return false, err
 	}
@@ -140,12 +140,12 @@ func (r *UserRepository) IDExists(ctx context.Context, id int) (bool, error) {
 
 func (r *UserRepository) GetWithId(ctx context.Context, id int) (*model.User, error) {
 
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_GET_WITH_ID"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_GET_WITH_ID"])
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := stmt.Query(id)
+	rows, err := stmt.QueryContext(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -172,12 +172,12 @@ func (r *UserRepository) GetWithId(ctx context.Context, id int) (*model.User, er
 
 func (r *UserRepository) GetWithMail(ctx context.Context, email string) (*model.User, error) {
 
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_GET_WITH_EMAIL"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_GET_WITH_EMAIL"])
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := stmt.Query(email)
+	rows, err := stmt.QueryContext(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -204,12 +204,12 @@ func (r *UserRepository) GetWithMail(ctx context.Context, email string) (*model.
 
 func (r *UserRepository) ProfileUpdate(ctx context.Context, query string, params []any) error {
 
-	stmt, err := config.App().DB.Prepare(query)
+	stmt, err := config.App().DB.PrepareContext(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	result, err := stmt.Exec(params...)
+	result, err := stmt.ExecContext(ctx, params...)
 	if err != nil {
 		return err
 	}
@@ -230,14 +230,14 @@ func (r *UserRepository) ProfileUpdate(ctx context.Context, query string, params
 }
 
 func (r *UserRepository) PasswordUpdate(ctx context.Context, password string, userId int) error {
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_UPDATE_PASS"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_UPDATE_PASS"])
 	if err != nil {
 		return err
 	}
 
 	updateAt := time.Now().Format("2006-01-02 15:04:05")
 	hashPass := auth.HashAndSalt(password)
-	result, err := stmt.Exec(hashPass, updateAt, userId)
+	result, err := stmt.ExecContext(ctx, hashPass, updateAt, userId)
 	if err != nil {
 		return err
 	}
@@ -260,12 +260,12 @@ func (r *UserRepository) PasswordUpdate(ctx context.Context, password string, us
 func (r *UserRepository) LastLoginUpdate(ctx context.Context, userId int) error {
 	lastLogin := time.Now().Format("2006-01-02 15:04:05")
 
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_LAST_LOGIN"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_LAST_LOGIN"])
 	if err != nil {
 		return err
 	}
 
-	result, err := stmt.Exec(lastLogin, userId)
+	result, err := stmt.ExecContext(ctx, lastLogin, userId)
 	if err != nil {
 		return err
 	}
@@ -285,14 +285,14 @@ func (r *UserRepository) LastLoginUpdate(ctx context.Context, userId int) error 
 }
 
 func (r *UserRepository) Delete(ctx context.Context, userID int) error {
-	stmt, err := config.App().DB.Prepare(config.App().QUERY["USER_DELETE"])
+	stmt, err := config.App().DB.PrepareContext(ctx, config.App().QUERY["USER_DELETE"])
 	if err != nil {
 		return err
 	}
 
 	deleteAndUpdate := time.Now().Format("2006-01-02 15:04:05")
 
-	result, err := stmt.Exec(false, deleteAndUpdate, deleteAndUpdate, userID)
+	result, err := stmt.ExecContext(ctx, false, deleteAndUpdate, deleteAndUpdate, userID)
 	if err != nil {
 		return err
 	}
