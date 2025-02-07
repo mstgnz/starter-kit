@@ -90,6 +90,7 @@ func (r *ApiService) prepare(method, path string, data map[string]any) (*respons
 	for k, v := range data {
 		r.params[k] = v
 	}
+	r.params["lang"] = config.App().Lang
 
 	return r.send()
 }

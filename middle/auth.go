@@ -1,12 +1,15 @@
 package middle
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/mstgnz/starter-kit/internal/auth"
+	"github.com/mstgnz/starter-kit/internal/config"
 	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/mstgnz/starter-kit/repository"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -30,9 +33,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
-		/* user := &model.User{}
-		err = user.GetWithId(user_id)
+		userRepository := &repository.UserRepository{}
+		user, err := userRepository.GetWithId(r.Context(), user_id)
 
 		if err != nil {
 			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: err.Error()})
@@ -40,6 +42,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), config.CKey("user"), user)
-		next.ServeHTTP(w, r.WithContext(ctx)) */
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

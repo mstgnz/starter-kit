@@ -3,7 +3,7 @@ include .env
 PACKAGES := $(shell go list ./...)
 BASENAME := $(shell basename ${PWD})
 
-.PHONY: help build run live connect db hasura redis create_network create_volume stop exec cleanI cleanC test
+.PHONY: run live build db redis stop cleanI cleanC exec test help
 .DEFAULT_GOAL:= run
 
 help: makefile
@@ -13,17 +13,13 @@ help: makefile
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
-## build: Build the Docker image
-build:
-	@docker build -t $(APP_NAME) .
-
 ## run: Build the Docker image and run the container
-run: cleanC create_network build
-	@docker run -d \
+run: cleanC create_network connect build
+	docker run -d \
 		--env-file .env \
 		--restart always \
 		--name $(APP_NAME) \
-		--network $(PROJECT_NAME) \
+		--network $(APP_NAME) \
 		-p $(APP_PORT):$(APP_PORT) \
 		$(APP_NAME)
 
@@ -32,68 +28,61 @@ live:
 #	find . -type f \( -name '*.go' -o -name '*.gohtml' \) | entr -r sh -c 'make && docker logs --follow $(APP_NAME)'
 	find . -type f \( -name '*.go' -o -name '*.gohtml' \) | entr -r sh -c 'go build -o /tmp/build ./cmd && /tmp/build'
 
-## connect: 
+## build: Build the Docker image
+build:
+	docker build -t $(APP_NAME) .
+
 connect:
-ifeq ($(APP_ENV),local)
+ifeq ($(APP_ENV),prod)
 	$(MAKE) db
 	$(MAKE) redis
-	$(MAKE) hasura
 endif
 
-## db: 
+## db: Run Postgres
 db: create_volume
 	docker run -d --name $(APP_NAME)-postgres --restart always \
-		-p $(DB_PORT):$(DB_PORT) \
+		-p $(DB_PORT):5432  \
 		-e TZ="Europe/Istanbul" \
 		-e POSTGRES_DB=$(DB_NAME) \
 		-e POSTGRES_USER=$(DB_USER) \
 		-e POSTGRES_PASSWORD=$(DB_PASS) \
 		-v $(APP_NAME):/var/lib/postgresql/data \
-		--network $(PROJECT_NAME) \
-		postgres:latest
+		--network $(APP_NAME) \
+		postgres
 
-hasura:
-	docker run -d --name $(APP_NAME)-hasura --restart always \
-		-p $(HASURA_PORT):$(HASURA_PORT) \
-		-e HASURA_GRAPHQL_DATABASE_URL="postgres://$(DB_USER):$(DB_PASS)@$(APP_NAME)-postgres:$(DB_PORT)/$(DB_NAME)" \
-		-e HASURA_GRAPHQL_ENABLED_LOG_TYPES="startup, http-log, webhook-log, websocket-log, query-log" \
-		-e HASURA_GRAPHQL_ENABLE_CONSOLE="true" \
-		-e HASURA_GRAPHQL_ADMIN_SECRET=$(HASURA_ADMIN_SECRET) \
-		-e HASURA_GRAPHQL_JWT_SECRET='{"type":"HS256","key":"$(JWT_SECRET)"}' \
-		-v $(APP_NAME):/hasura-migrations \
-		--network $(PROJECT_NAME) \
-		hasura/graphql-engine:v2.9.0
-
-## redis: 
+## redis: Run Redis
 redis:
-	docker run -d --name $(APP_NAME)-redis -p 6379:6379 --restart always --network $(PROJECT_NAME) redis:latest
+	docker run -d --name $(APP_NAME)-redis -p 6379:6379 --restart always --network $(APP_NAME) redis:latest
 
-## create_network: 
+## create_network: Create network for this project name
 create_network:
-	@if ! docker network inspect $(PROJECT_NAME) >/dev/null 2>&1; then \
-		docker network create $(PROJECT_NAME); \
+	@if ! docker network inspect $(APP_NAME) >/dev/null 2>&1; then \
+		docker network create $(APP_NAME); \
+	else \
+		echo "Network '$(APP_NAME)' already exists, using existing network."; \
 	fi
 
-## create_volume: 
+## create_volume: Create volume for this project name
 create_volume:
-	@if ! docker volume inspect $(PROJECT_NAME) >/dev/null 2>&1; then \
-		docker volume create $(PROJECT_NAME); \
+	@if ! docker volume inspect $(APP_NAME) >/dev/null 2>&1; then \
+		docker volume create $(APP_NAME); \
+	else \
+		echo "Volume '$(APP_NAME)' already exists, skipping creation."; \
 	fi
 
 ## stop: Stop and remove the Docker container 
 stop:
-	@docker stop --time=600 $(APP_NAME)
-	@docker rm $(APP_NAME)
+	docker stop --time=600 $(APP_NAME)
+	docker rm $(APP_NAME)
 
 ## exec: Run the application inside the Docker container
 exec:
-	@docker exec -it $(APP_NAME) $(CMD)
+	docker exec -it $(APP_NAME) $(CMD)
 
 ## cleanI: Clean up the Docker image
 cleanI:
-	@docker rmi $(APP_NAME)
-	@docker builder prune --filter="image=$(APP_NAME)"
-	@docker rmi $(docker images -f "dangling=true" -q)
+	docker rmi $(APP_NAME)
+	docker builder prune --filter="image=$(APP_NAME)"
 
 ## cleanC: Clean up the Docker containers
 cleanC:
@@ -112,4 +101,4 @@ cleanC:
 
 ## test: Run all test
 test: 
-	@go test -v ./...
+	go test -v ./...

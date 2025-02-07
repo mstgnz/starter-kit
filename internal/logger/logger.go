@@ -5,17 +5,18 @@ import (
 	"log/slog"
 	"runtime"
 	"strings"
+
+	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 func logToDB(level string, message string) {
-	/* db := config.App().DB.Create()
 	stmt, err := config.App().DB.Prepare(config.App().QUERY["APP_LOG_INSERT"])
 	if err == nil && level == "WARNING" {
 		_, _ = stmt.Exec(level, message)
 	}
 	defer func() {
 		_ = stmt.Close()
-	}() */
+	}()
 }
 
 func Info(messages ...string) {
