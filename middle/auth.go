@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cemilsahin/arabamtaksit/internal/auth"
-	"github.com/cemilsahin/arabamtaksit/internal/response"
+	"github.com/mstgnz/starter-kit/internal/auth"
+	"github.com/mstgnz/starter-kit/internal/response"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {

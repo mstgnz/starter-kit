@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/cemilsahin/arabamtaksit/internal/conn"
-	"github.com/cemilsahin/arabamtaksit/internal/response"
-	"github.com/cemilsahin/arabamtaksit/pkg/mstgnz/cache"
-	"github.com/cemilsahin/arabamtaksit/pkg/mstgnz/mail"
 	"github.com/go-playground/validator/v10"
+	"github.com/mstgnz/starter-kit/internal/conn"
+	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz/cache"
+	"github.com/mstgnz/starter-kit/pkg/mstgnz/mail"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )

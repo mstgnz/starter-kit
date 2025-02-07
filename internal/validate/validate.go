@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/cemilsahin/arabamtaksit/internal/config"
 	"github.com/go-playground/validator/v10"
+	"github.com/mstgnz/starter-kit/internal/config"
 )
 
 func Validate(structure any) error {

@@ -1,4 +1,4 @@
-module github.com/cemilsahin/arabamtaksit
+module github.com/mstgnz/starter-kit
 
 go 1.23
 

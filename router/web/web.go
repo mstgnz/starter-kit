@@ -1,10 +1,10 @@
 package web
 
 import (
-	"github.com/cemilsahin/arabamtaksit/handler"
-	"github.com/cemilsahin/arabamtaksit/internal/config"
-	"github.com/cemilsahin/arabamtaksit/middle"
 	"github.com/go-chi/chi/v5"
+	"github.com/mstgnz/starter-kit/handler"
+	"github.com/mstgnz/starter-kit/internal/config"
+	"github.com/mstgnz/starter-kit/middle"
 )
 
 var (

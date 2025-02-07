@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cemilsahin/arabamtaksit/internal/response"
+	"github.com/mstgnz/starter-kit/internal/response"
 )
 
 var skipUrls = []string{

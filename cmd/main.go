@@ -12,17 +12,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cemilsahin/arabamtaksit/internal/config"
-	"github.com/cemilsahin/arabamtaksit/internal/conn"
-	"github.com/cemilsahin/arabamtaksit/internal/logger"
-	"github.com/cemilsahin/arabamtaksit/internal/response"
-	"github.com/cemilsahin/arabamtaksit/internal/validate"
-	"github.com/cemilsahin/arabamtaksit/middle"
-	"github.com/cemilsahin/arabamtaksit/router/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"github.com/mstgnz/starter-kit/internal/config"
+	"github.com/mstgnz/starter-kit/internal/conn"
+	"github.com/mstgnz/starter-kit/internal/logger"
+	"github.com/mstgnz/starter-kit/internal/response"
+	"github.com/mstgnz/starter-kit/internal/validate"
+	"github.com/mstgnz/starter-kit/middle"
+	"github.com/mstgnz/starter-kit/router/web"
 )
 
 var (
