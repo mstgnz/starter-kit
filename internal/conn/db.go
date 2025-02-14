@@ -33,9 +33,19 @@ func (db *DB) ConnectDatabase() {
 	if err != nil {
 		panic("Failed DB Connection")
 	}
-	if err = database.Ping(); err != nil {
-		panic("Failed DB Ping")
+
+	database.SetMaxOpenConns(25)
+	database.SetMaxIdleConns(5)
+	database.SetConnMaxLifetime(5 * time.Minute)
+	database.SetConnMaxIdleTime(2 * time.Minute)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err = database.PingContext(ctx); err != nil {
+		panic("Failed DB Ping: " + err.Error())
 	}
+
 	log.Println("DB Connected")
 	db.DB = database
 }
