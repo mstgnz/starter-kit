@@ -29,25 +29,41 @@ func (db *DB) ConnectDatabase() {
 	dbZone := os.Getenv("DB_ZONE")
 
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=%s", dbHost, dbPort, dbUser, dbPass, dbName, dbZone)
-	database, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic("Failed DB Connection")
+
+	var err error
+	var database *sql.DB
+
+	for attempts := 1; attempts <= 5; attempts++ {
+		database, err = sql.Open("postgres", connStr)
+		if err != nil {
+			log.Printf("Attempt %d: Failed to open DB connection: %v", attempts, err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		// Veritabanı ayarlarını yapılandır
+		database.SetMaxOpenConns(25)
+		database.SetMaxIdleConns(5)
+		database.SetConnMaxLifetime(5 * time.Minute)
+		database.SetConnMaxIdleTime(2 * time.Minute)
+
+		// Bağlantıyı test et
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err = database.PingContext(ctx)
+		cancel()
+
+		if err == nil {
+			log.Println("DB Connected successfully")
+			db.DB = database
+			return
+		}
+
+		log.Printf("Attempt %d: Failed to ping DB: %v", attempts, err)
+		database.Close()
+		time.Sleep(2 * time.Second)
 	}
 
-	database.SetMaxOpenConns(25)
-	database.SetMaxIdleConns(5)
-	database.SetConnMaxLifetime(5 * time.Minute)
-	database.SetConnMaxIdleTime(2 * time.Minute)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	if err = database.PingContext(ctx); err != nil {
-		panic("Failed DB Ping: " + err.Error())
-	}
-
-	log.Println("DB Connected")
-	db.DB = database
+	log.Fatal("Failed to connect to DB after 5 attempts")
 }
 
 // CloseDatabase method is closing a connection between your app and your db
