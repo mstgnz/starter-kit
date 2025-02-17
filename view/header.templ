@@ -1,8 +1,0 @@
-package view
-
-import "github.com/mstgnz/starter-kit/internal/localization"
-
-templ header() {
-	<h1>Header</h1>
-	<a href={ templ.SafeURL(localization.GetLang("routes.home")) }>{ localization.GetLang("home") }</a>
-}
