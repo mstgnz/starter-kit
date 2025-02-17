@@ -60,7 +60,7 @@ func HashMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Hash check
-		rawData := "Saha." + timestamp + ":" + strings.TrimPrefix(path, "/api/") + ":" + os.Getenv("APP_SECRET") + ".Kolay"
+		rawData := "Starter." + timestamp + ":" + strings.TrimPrefix(path, "/api/") + ":" + os.Getenv("APP_SECRET") + ".Kit"
 		serverHash := generateHash(rawData)
 		if !hashEquals(serverHash, clientHash) {
 			_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{

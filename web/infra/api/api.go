@@ -98,7 +98,7 @@ func (r *ApiService) prepare(method, path string, data map[string]any) (*model.R
 func (r *ApiService) setHeaderHash(path string) error {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	secret := os.Getenv("APP_SECRET")
-	rawData := fmt.Sprintf("Saha.%s:%s:%s.Kolay", timestamp, path, secret)
+	rawData := fmt.Sprintf("Starter.%s:%s:%s.Kit", timestamp, path, secret)
 	hash := sha256.Sum256([]byte(rawData))
 
 	r.headers["Timestamp"] = timestamp
