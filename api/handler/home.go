@@ -13,7 +13,7 @@ func NewHomeHandler() *homeHandler {
 	return &homeHandler{}
 }
 
-func (h *homeHandler) Home(ctx context.Context, req *any) response.Response {
+func (h *homeHandler) Home(ctx context.Context, _ *any) response.Response {
 	return response.Response{
 		Code:    http.StatusOK,
 		Success: true,

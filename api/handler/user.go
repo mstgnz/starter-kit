@@ -5,12 +5,8 @@ import (
 	"net/http"
 
 	"github.com/mstgnz/starter-kit/api/infra/response"
+	"github.com/mstgnz/starter-kit/api/model"
 )
-
-type UserRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
-}
 
 type userHandler struct {
 }
@@ -19,7 +15,7 @@ func NewUserHandler() *userHandler {
 	return &userHandler{}
 }
 
-func (h *userHandler) Login(ctx context.Context, req *UserRequest) response.Response {
+func (h *userHandler) Login(ctx context.Context, req *model.Login) response.Response {
 	return response.Response{
 		Code:    http.StatusOK,
 		Success: true,
@@ -27,7 +23,7 @@ func (h *userHandler) Login(ctx context.Context, req *UserRequest) response.Resp
 	}
 }
 
-func (h *userHandler) Register(ctx context.Context, req *UserRequest) response.Response {
+func (h *userHandler) Register(ctx context.Context, req *model.Register) response.Response {
 	return response.Response{
 		Code:    http.StatusOK,
 		Success: true,
@@ -35,7 +31,7 @@ func (h *userHandler) Register(ctx context.Context, req *UserRequest) response.R
 	}
 }
 
-func (h *userHandler) Verify(ctx context.Context, req *UserRequest) response.Response {
+func (h *userHandler) Verify(ctx context.Context, _ *any) response.Response {
 	return response.Response{
 		Code:    http.StatusOK,
 		Success: true,
