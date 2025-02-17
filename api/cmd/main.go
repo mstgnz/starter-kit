@@ -20,6 +20,7 @@ import (
 	"github.com/mstgnz/starter-kit/api/internal/response"
 	"github.com/mstgnz/starter-kit/api/internal/validate"
 	"github.com/mstgnz/starter-kit/api/middle"
+	"github.com/mstgnz/starter-kit/api/router/web"
 )
 
 var (
@@ -50,43 +51,6 @@ func init() {
 
 	PORT = os.Getenv("APP_PORT")
 }
-
-/* Handler http isteklerinden soyutla
-type Request any // struct yapısında `json:"id", param:"id", query:"id", header:"id"` gibi tagleri kullanılabilir
-type Response map[string]any
-
-type HandlerInterface[Req Request, Res Response] interface {
-	Handle(ctx context.Context, request Req) (Res, error)
-}
-
-func handler[Req Request, Res Response](handler HandlerInterface[Req, Res]) HttpHandler {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var request Req
-		// body parser
-		if err := json.NewDecoder(r.Body).Decode(&request["body"]); err != nil {
-			return err
-		}
-		// param parser
-		request["params"] = chi.Vars(r)
-		// query parser
-		request["query"] = r.URL.Query()
-
-		// header parser
-		request["headers"] = r.Header
-
-		res, err := handler.Handle(r.Context(), request)
-		if err != nil {
-			return err
-		}
-
-		_ = response.WriteJSON(w, http.StatusOK, response.Response{
-			Success: true,
-			Message: "Success",
-			Data:    res,
-		})
-		return nil
-	}
-} */
 
 func main() {
 
@@ -124,20 +88,10 @@ func main() {
 		http.ServeFile(w, r, "./view/swagger.html")
 	})
 
-	// web without auth
-	r.Group(func(r chi.Router) {
-		for _, lang := range config.App().Langs {
-			r.Get(config.App().Routes["login"][lang], config.Catch(userHandler.Login))
-			r.Get(config.App().Routes["register"][lang], config.Catch(userHandler.Register))
-		}
-		r.Post("/login", config.Catch(userHandler.Login))
-		r.Post("/register", config.Catch(userHandler.Register))
-	})
-
-	r.Route("/api", func(r chi.Router) {
+	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(middle.HeaderMiddleware)
 		r.Use(middle.AuthMiddleware)
-
+		web.WebRoutes(r)
 	})
 
 	// Not Found

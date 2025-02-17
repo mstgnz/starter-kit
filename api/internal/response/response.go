@@ -3,9 +3,15 @@ package response
 import "encoding/json"
 
 type Response struct {
+	Code    int            `json:"code"`
 	Success bool           `json:"success"`
 	Message string         `json:"message"`
 	Data    map[string]any `json:"data"`
+}
+
+func (r *Response) SetCode(code int) *Response {
+	r.Code = code
+	return r
 }
 
 func (r *Response) SetSuccess(success bool) *Response {
