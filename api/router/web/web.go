@@ -3,8 +3,8 @@ package web
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mstgnz/starter-kit/api/handler"
-	"github.com/mstgnz/starter-kit/api/infra/basehandler"
 	"github.com/mstgnz/starter-kit/api/infra/config"
+	"github.com/mstgnz/starter-kit/api/infra/handle"
 )
 
 var (
@@ -19,5 +19,5 @@ func WebRoutes(r chi.Router) {
 	r.Post("/login", config.Catch(userHandler.Login))
 	r.Post("/register", config.Catch(userHandler.Register)) */
 
-	r.Get("/test", config.Catch(basehandler.Handle(userHandler.Login)))
+	r.Get("/test", config.Catch(handle.Handle(userHandler.Login)))
 }
