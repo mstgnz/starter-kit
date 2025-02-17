@@ -22,8 +22,8 @@ This project consists of two main components:
     /asset          - Frontend assets (CSS, JS, images)
     /cmd            - Web application entry point
     /handler        - HTTP request handlers
-    /internal       - Internal packages
     /model          - Data models
+    /service        - Service packages
     /view           - Frontend templates and components
 ```
 
