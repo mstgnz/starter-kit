@@ -5,7 +5,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"github.com/mstgnz/starter-kit/api/internal/config"
+	"github.com/mstgnz/starter-kit/api/infra/config"
 	"github.com/robfig/cron/v3"
 )
 

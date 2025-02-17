@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mstgnz/starter-kit/api/internal/auth"
-	"github.com/mstgnz/starter-kit/api/internal/config"
+	"github.com/mstgnz/starter-kit/api/infra/auth"
+	"github.com/mstgnz/starter-kit/api/infra/config"
 	"github.com/mstgnz/starter-kit/api/model"
 )
 

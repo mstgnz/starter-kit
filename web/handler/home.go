@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/mstgnz/starter-kit/web/service/render"
+	"github.com/mstgnz/starter-kit/web/infra/render"
 	"github.com/mstgnz/starter-kit/web/view/page"
 )
 

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mstgnz/starter-kit/web/config"
+	"github.com/mstgnz/starter-kit/web/infra/api"
+	"github.com/mstgnz/starter-kit/web/infra/config"
 	"github.com/mstgnz/starter-kit/web/model"
-	"github.com/mstgnz/starter-kit/web/service/api"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {

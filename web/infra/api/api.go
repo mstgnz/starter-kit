@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mstgnz/starter-kit/web/config"
+	"github.com/mstgnz/starter-kit/web/infra/config"
 	"github.com/mstgnz/starter-kit/web/model"
 )
 

@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/mstgnz/starter-kit/web/config"
+	"github.com/mstgnz/starter-kit/api/infra/config"
 )
 
 func Validate(structure any) error {

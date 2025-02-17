@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mstgnz/starter-kit/web/config"
+	"github.com/mstgnz/starter-kit/web/infra/config"
 )
 
 type Translation map[string]any

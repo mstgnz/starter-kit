@@ -23,7 +23,7 @@ This repository is a starter kit designed to provide a foundational structure fo
     main.go - The entry point for the application, where the main function resides.
 /handler
     - Handles HTTP requests, mapping them to corresponding services or business logic.
-/internal
+/infra
     /api
         api.go    - API for use in template
         cdn.go    - CDN for use in template

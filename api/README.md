@@ -20,7 +20,7 @@ This repository is a starter kit designed to provide a foundational structure fo
     main.go - The entry point for the application, where the main function resides.
 /handler
     - Handles HTTP requests, mapping them to corresponding services or business logic.
-/internal
+/infra
     /auth
         bcrypt.go   - Handles password hashing and verification using bcrypt.
         jwt.go      - Manages JWT (JSON Web Token) creation, parsing, and validation.

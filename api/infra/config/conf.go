@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/mstgnz/starter-kit/api/internal/conn"
+	"github.com/mstgnz/starter-kit/api/infra/conn"
 	"github.com/mstgnz/starter-kit/api/pkg/mstgnz/cache"
 	"github.com/mstgnz/starter-kit/api/pkg/mstgnz/gobuilder"
 	"github.com/mstgnz/starter-kit/api/pkg/mstgnz/mail"

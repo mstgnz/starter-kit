@@ -16,11 +16,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
-	"github.com/mstgnz/starter-kit/web/config"
 	"github.com/mstgnz/starter-kit/web/handler"
+	"github.com/mstgnz/starter-kit/web/infra/config"
+	"github.com/mstgnz/starter-kit/web/infra/localization"
+	"github.com/mstgnz/starter-kit/web/infra/validate"
 	"github.com/mstgnz/starter-kit/web/middle"
-	"github.com/mstgnz/starter-kit/web/service/localization"
-	"github.com/mstgnz/starter-kit/web/service/validate"
 )
 
 var (

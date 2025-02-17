@@ -11,7 +11,7 @@ import (
 // LoadSQLQueries loads SQL queries from a file and populates the QUERY map.
 func LoadSQLQueries() (map[string]string, error) {
 	query := make(map[string]string)
-	file, err := os.Open("query.sql")
+	file, err := os.Open("asset/query.sql")
 	if err != nil {
 		return query, err
 	}

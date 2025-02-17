@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mstgnz/starter-kit/api/internal/config"
-	"github.com/mstgnz/starter-kit/api/internal/response"
-	"github.com/mstgnz/starter-kit/api/internal/validate"
+	"github.com/mstgnz/starter-kit/api/infra/config"
+	"github.com/mstgnz/starter-kit/api/infra/response"
+	"github.com/mstgnz/starter-kit/api/infra/validate"
 )
 
 type Request any

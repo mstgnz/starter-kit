@@ -3,7 +3,7 @@ package web
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mstgnz/starter-kit/api/handler"
-	"github.com/mstgnz/starter-kit/api/internal/config"
+	"github.com/mstgnz/starter-kit/api/infra/config"
 	"github.com/mstgnz/starter-kit/api/service/basehandler"
 )
 

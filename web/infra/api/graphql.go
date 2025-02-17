@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/mstgnz/starter-kit/web/config"
+	"github.com/mstgnz/starter-kit/web/infra/config"
 )
 
 type GraphQLService struct {
