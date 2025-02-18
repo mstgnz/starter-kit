@@ -73,12 +73,15 @@ func main() {
 	// CORS
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Timestamp", "Hash", "Origin", "X-Requested-With"},
+		ExposedHeaders:   []string{"Link", "Content-Length", "Access-Control-Allow-Origin"},
 		AllowCredentials: true,
-		MaxAge:           300,
+		MaxAge:           300, // Preflight cache time (second)
 	}))
+
+	// Hash Middleware
+	r.Use(middle.HashMiddleware)
 
 	workDir, _ := os.Getwd()
 	fileServer(r, "/asset", http.Dir(filepath.Join(workDir, "asset")))
