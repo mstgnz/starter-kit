@@ -1,0 +1,8 @@
+<div>
+    <input type="file" id="excel-import" (change)="fileExcelUpload($event)" style="display: none;"
+        accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+    <button type="button" class="p-button mr-2" (click)="openUpload()">
+        <span class="pi pi-upload p-button-icon p-button-icon-left"></span>
+        <span class="p-button-label">Excel İmport</span>
+    </button>
+</div>

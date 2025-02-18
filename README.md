@@ -1,9 +1,10 @@
-# Web & API Project
+# Web & Panel & API Project
 
-This project consists of two main components:
+This project consists of three main components:
 
 - A web application (frontend)
 - An API service (backend)
+- An Angular panel application (admin dashboard)
 
 ## Project Structure
 
@@ -25,6 +26,16 @@ This project consists of two main components:
     /model          - Data models
     /service        - Service packages
     /view           - Frontend templates and components
+
+/panel              - Angular Admin Dashboard
+    /src            - Source files
+        /app        - Application modules and components
+            /guards      - Authentication and permission guards
+            /interfaces - TypeScript interfaces
+            /layout     - Layout components
+            /modules    - Feature modules
+            /services   - Application services
+            /shared    - Shared modules and components
 ```
 
 ## Features
@@ -53,6 +64,19 @@ This project consists of two main components:
 - Component-based structure
 - Responsive design
 
+### Angular Panel
+
+- Modern Angular-based admin dashboard
+- Component-based architecture
+- Authentication and authorization
+- Role-based access control
+- Responsive layout system
+- Service integration with API
+- Interceptors for request/response handling
+- TypeScript interfaces for type safety
+- Shared modules and components
+- Guard-protected routes
+
 ## Getting Started
 
 1. **Clone the repository**:
@@ -71,11 +95,19 @@ This project consists of two main components:
    ```
 
 3. **Setup Web Application**:
+
    ```bash
    cd web
    cp .env.example .env    # Configure your environment variables
    go mod tidy            # Install dependencies
    make live              # Run the web application
+   ```
+
+4. **Setup Angular Panel**:
+   ```bash
+   cd panel
+   npm install              # Install dependencies
+   npm start               # Run the development server
    ```
 
 ## Configuration

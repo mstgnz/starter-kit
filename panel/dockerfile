@@ -1,0 +1,14 @@
+# Stage 1: Build the Angular application
+FROM node:22.14.0 AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm install -g @angular/cli@19.1.7
+RUN npm install
+COPY . .
+RUN ng build -c production --delete-output-path
+# Stage 2: Serve
+FROM nginx:alpine
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/
+COPY --from=build /app/dist/panel/browser /usr/share/nginx/html
+CMD ["nginx", "-g", "daemon off;"]

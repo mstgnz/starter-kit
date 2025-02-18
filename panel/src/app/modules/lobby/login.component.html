@@ -1,0 +1,58 @@
+<div class="wrapper">
+    <section class="login white-bg o-hidden scrollbar">
+        <div class="container-fluid p-0">
+            <div class="row row-eq-height no-gutter height-100vh">
+                <div class="col-lg-6 parallax" style="background-image: url(assets/img/login/08.jpg);"></div>
+                <div class="col-lg-5 position-relative">
+                    <div class="vertical-align full-width">
+                        <div class="login-14">
+                            <h1>Panel</h1>
+                            <p class="mb-30">WMS</p>
+                            <ng-container *ngIf="!isCode; else elseBlock">
+                                <form [formGroup]="formGroup" (ngSubmit)="formSubmit()" novalidate autocomplete="off">
+                                    <div class="pb-50 clearfix white-bg">
+                                        <div class="section-field mb-20">
+                                            <label class="mb-10">Email veya Telefon* </label>
+                                            <input type="text" class="form-control" name="email_or_phone"
+                                                formControlName="email_or_phone" placeholder="Email veya Telefon">
+                                        </div>
+                                        <div class="section-field mb-20">
+                                            <label class="mb-10">Şifreniz* </label>
+                                            <input type="password" class="form-control" name="password"
+                                                formControlName="password" placeholder="Şifreniz">
+                                        </div>
+                                        <div class="section-field">
+                                            <div class="remember-checkbox mb-30">
+                                                <a href="/forgot-password" class="float-end">Şifremi Unuttum</a>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="button" [disabled]="!formGroup.valid">
+                                            <span>Giriş Yap</span>
+                                            <i class="fa fa-check"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </ng-container>
+                            <ng-template #elseBlock>
+                                <div class="text-900 text-xl font-bold mb-2">Doğrulama Kodu Giriniz</div>
+                                <span class="text-600 font-medium"></span>
+                                <div class="flex flex-column">
+                                    <span class="p-input-icon-left w-full mb-4">
+                                        <i class="pi pi-lock"></i>
+                                        <input type="text" class="w-full md:w-25rem" placeholder="Kodu Giriniz"
+                                            [formControl]="code">
+                                    </span>
+                                    <button type="button" class="p-button mr-2" (click)="checkCode()"
+                                        [disabled]="!code.valid || loading">
+                                        <span class="pi pi-spin pi-spinner" *ngIf="loading"></span>
+                                        <span class="p-button-label mr-2">Doğrula</span>
+                                    </button>
+                                </div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
