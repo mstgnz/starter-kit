@@ -1,0 +1,91 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: dockerfile
+    container_name: ${PROJECT_NAME}-api
+    restart: always
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    volumes:
+      - ./api:/app
+    networks:
+      - ${PROJECT_NAME}
+    depends_on:
+      - "postgres"
+      - "redis"
+      - "hasura"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  web:
+    build:
+      context: ./web
+      dockerfile: dockerfile
+    container_name: ${PROJECT_NAME}-web
+    restart: always
+    ports:
+      - "${WEB_PORT}:80"
+    volumes:
+      - ./web:/app
+    networks:
+      - ${PROJECT_NAME}
+    depends_on:
+      - "api"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  hasura:
+    image: hasura/graphql-engine:v2.9.0
+    container_name: ${PROJECT_NAME}-hasura
+    restart: always
+    ports:
+      - "${HASURA_PORT}:8080"
+    networks:
+      - ${PROJECT_NAME}
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: "postgres://${DB_USER}:${DB_PASS}@${PROJECT_NAME}-postgres:${DB_PORT}/${DB_NAME}"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: "startup, http-log, webhook-log, websocket-log, query-log"
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"${JWT_SECRET}"}'
+    depends_on:
+      - "postgres"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  postgres:
+    image: postgres:latest
+    container_name: ${PROJECT_NAME}-postgres
+    restart: always
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+    networks:
+      - ${PROJECT_NAME}
+    environment:
+      - TZ="Europe/Istanbul"
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+  redis:
+    image: redis:latest
+    container_name: ${PROJECT_NAME}-redis
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - ${PROJECT_NAME}
+networks:
+  wms:
+    name: wms
+    driver: bridge
+volumes:
+  db:
