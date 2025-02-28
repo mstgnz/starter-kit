@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -103,10 +106,49 @@ func main() {
 		return
 	})
 
-	err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), r)
-	if err != nil && err != http.ErrServerClosed {
-		log.Fatal(err.Error())
+	// Create a context that listens for interrupt and terminate signals
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
+	defer stop()
+
+	// Run your HTTP server in a goroutine
+	go func() {
+		server := &http.Server{
+			Addr:              fmt.Sprintf(":%s", PORT),
+			Handler:           r,
+			ReadTimeout:       60 * time.Second,
+			WriteTimeout:      60 * time.Second,
+			IdleTimeout:       60 * time.Second,
+			ReadHeaderTimeout: 60 * time.Second,
+		}
+		err := server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatal(err.Error())
+		}
+	}()
+
+	logger.Info("API is running on", PORT)
+
+	// Block until a signal is received
+	<-ctx.Done()
+
+	logger.Info("API is shutting on", PORT)
+
+	// set Shutting
+	config.App().Shutting = true
+
+	// check Running
+	for {
+		if config.App().Running <= 0 {
+			logger.Info("Cronjobs all done")
+			break
+		} else {
+			logger.Info(fmt.Sprintf("Currently %d active jobs in progress. pending completion...", config.App().Running))
+		}
+		time.Sleep(time.Second * 5)
 	}
+
+	logger.Info("Shutting down gracefully...")
+
 }
 
 func fileServer(r chi.Router, path string, root http.FileSystem) {
