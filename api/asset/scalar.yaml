@@ -1,0 +1,139 @@
+openapi: 3.0.0
+info:
+  title: API
+  description: |
+    External API for accessing lead data programmatically.
+    
+    ## Authentication
+    1. Get your API key from the Panel (Settings → API Keys)
+    2. Authenticate using POST /api/v1/auth/login with your API key
+    3. Use the returned JWT token in the Authorization header for subsequent requests
+    
+    ## Rate Limits
+    - Authentication: 10 requests/minute
+    - API endpoints: Based on your subscription plan
+    - Rate limit headers are included in all responses
+    
+    ## Webhook Leads (Dedicated Support)
+    For customers with Dedicated Support package, you can submit leads from your own forms 
+    via webhook. This enables custom landing page integrations without using Starter Kit landing pages.
+  version: 1.0.0
+  contact:
+    email: support@starterkit.com
+    url: https://starterkit.com
+
+security:
+  - BearerAuth: []
+  
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/v1/auth/login
+  schemas:
+    Response:
+      type: object
+      properties:
+        code:
+          type: integer
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+
+servers:
+  - url: http://localhost:8080
+    description: Development
+  - url: https://api.starterkit.com
+    description: Production
+
+tags:
+  - name: Authentication
+    description: API authentication endpoints
+  - name: Leads
+    description: Lead management endpoints
+  - name: Webhook
+    description: |
+      Webhook lead integration for Dedicated Support customers.
+      Submit leads from your own forms directly to Starter Kit.
+  - name: Usage
+    description: API usage statistics
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate with API Key
+      description: |
+        Exchange your API key for a JWT token.
+        The token is valid for 1 hour.
+      security: []  # No auth required for this endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - api_key
+              properties:
+                api_key:
+                  type: string
+                  description: Your API key (starts with flw_)
+                  example: "flw_abc123def456..."
+      responses:
+        200:
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 200
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: JWT token for API requests
+                      expires_at:
+                        type: integer
+                        description: Token expiration timestamp (Unix)
+                      tenant_id:
+                        type: integer
+        401:
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 401
+                success: false
+                message: "Invalid API key"
+        429:
+          description: Too many authentication attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -15,6 +17,7 @@ import (
 	"github.com/mstgnz/starter-kit/api/pkg/mstgnz/cache"
 	"github.com/mstgnz/starter-kit/api/pkg/mstgnz/gobuilder"
 	"github.com/mstgnz/starter-kit/api/pkg/mstgnz/mail"
+	"github.com/robfig/cron/v3"
 )
 
 type CKey string
@@ -23,6 +26,7 @@ type Config struct {
 	DB        *conn.DB
 	Mail      *mail.Mail
 	Cache     *cache.Cache
+	Cron      *cron.Cron
 	Builder   *gobuilder.GoBuilder
 	Kafka     *conn.Kafka
 	Redis     *conn.Redis
@@ -47,6 +51,7 @@ func App() *Config {
 		instance = &Config{
 			DB:        &conn.DB{},
 			Cache:     cache.NewCache(),
+			Cron:      cron.New(),
 			Builder:   gobuilder.NewGoBuilder(gobuilder.Postgres),
 			Kafka:     &conn.Kafka{},
 			Redis:     &conn.Redis{},
@@ -137,4 +142,34 @@ func WriteBody(r *http.Request) {
 	} else {
 		log.Println("WriteBody: ", string(body))
 	}
+}
+
+func Slugify(text string) string {
+	trMap := map[string]string{
+		"ç": "c", "Ç": "c",
+		"ğ": "g", "Ğ": "g",
+		"ş": "s", "Ş": "s",
+		"ü": "u", "Ü": "u",
+		"ı": "i", "İ": "i",
+		"ö": "o", "Ö": "o",
+	}
+
+	// Replace Turkish characters
+	for key, val := range trMap {
+		text = strings.ReplaceAll(text, key, val)
+	}
+
+	// Remove non-alphanumeric characters (except spaces and dashes)
+	reg := regexp.MustCompile(`[^-a-zA-Z0-9\s]+`)
+	text = reg.ReplaceAllString(text, "")
+
+	// Replace spaces with dashes
+	text = strings.ReplaceAll(text, " ", "-")
+
+	// Replace multiple consecutive dashes with single dash
+	reg = regexp.MustCompile(`-+`)
+	text = reg.ReplaceAllString(text, "-")
+
+	// Convert to lowercase
+	return strings.ToLower(text)
 }

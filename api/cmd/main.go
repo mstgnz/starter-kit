@@ -14,7 +14,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	"github.com/mstgnz/starter-kit/api/handler"
 	"github.com/mstgnz/starter-kit/api/infra/config"
@@ -24,6 +23,7 @@ import (
 	"github.com/mstgnz/starter-kit/api/infra/validate"
 	"github.com/mstgnz/starter-kit/api/middle"
 	"github.com/mstgnz/starter-kit/api/router/web"
+	"github.com/mstgnz/starter-kit/api/schedule"
 )
 
 var (
@@ -35,9 +35,10 @@ var (
 
 func init() {
 	// Load Env
-	if err := godotenv.Load(".env"); err != nil {
-		logger.Warn(fmt.Sprintf("Load Env Error: %v", err))
-		log.Fatalf("Load Env Error: %v", err)
+	if os.Getenv("APP_ENV") == "local" {
+		if err := godotenv.Load(".env"); err != nil {
+			logger.Warn(fmt.Sprintf("Load Env Error: %v", err))
+		}
 	}
 	// init conf
 	_ = config.App()
@@ -53,15 +54,49 @@ func init() {
 	}
 
 	PORT = os.Getenv("APP_PORT")
+	if PORT == "" {
+		PORT = "8080"
+	}
 }
 
 func main() {
+	args := os.Args[1:]
+
+	if len(args) > 0 {
+		HandleCommand(args)
+		return
+	}
+
+	// Create a context that listens for interrupt and terminate signals
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
+	defer stop()
+
+	// Scheduler Call in goroutine
+	go func() {
+		schedule.CallSchedule(ctx, config.App().Cron)
+		config.App().Cron.Start()
+
+		// Context dinle ve scheduler'ı kapat
+		<-ctx.Done()
+		log.Println("Shutting down scheduler...")
+		config.App().Cron.Stop()
+	}()
+
+	startWebServer(ctx)
+}
+
+func startWebServer(ctx context.Context) {
 
 	defer func() {
 		config.App().Redis.CloseRedis()
 		config.App().Kafka.CloseKafka()
 		config.App().DB.CloseDatabase()
 	}()
+
+	// init conf
+	_ = config.App()
+
+	validate.CustomValidate()
 
 	// Chi Define Routes
 	r := chi.NewRouter()
@@ -73,25 +108,28 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// CORS
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Timestamp", "Hash", "Origin", "X-Requested-With"},
-		ExposedHeaders:   []string{"Link", "Content-Length", "Access-Control-Allow-Origin"},
-		AllowCredentials: true,
-		MaxAge:           300, // Preflight cache time (second)
+	// CORS - Only allow specific origins
+	r.Use(middle.CORSMiddleware())
+
+	// Global Rate Limit - 500 requests per minute per IP
+	r.Use(middle.GlobalRateLimitMiddleware(middle.RateLimitConfig{
+		Requests: 500,
+		Window:   time.Minute,
+		Message:  "Too many requests. Please slow down.",
 	}))
 
+	// IP Middleware - Extract client IP and set in context
+	r.Use(middle.IPMiddleware)
+
 	// Hash Middleware
-	r.Use(middle.HashMiddleware)
+	//r.Use(middle.HashMiddleware)
 
 	workDir, _ := os.Getwd()
 	fileServer(r, "/asset", http.Dir(filepath.Join(workDir, "asset")))
 
 	// swagger
-	r.Get("/swagger", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./view/swagger.html")
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./view/scalar.html")
 	})
 
 	r.Route("/api/v1", func(r chi.Router) {
@@ -102,13 +140,8 @@ func main() {
 
 	// Not Found
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		_ = response.WriteJSON(w, http.StatusUnauthorized, response.Response{Success: false, Message: "Not Found"})
-		return
+		_ = response.WriteJSON(w, http.StatusNotFound, response.Response{Success: false, Message: "Not Found"})
 	})
-
-	// Create a context that listens for interrupt and terminate signals
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
-	defer stop()
 
 	// Run your HTTP server in a goroutine
 	go func() {
@@ -122,6 +155,7 @@ func main() {
 		}
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
+			logger.Warn("Fatal Error", "err", err.Error())
 			log.Fatal(err.Error())
 		}
 	}()
@@ -148,7 +182,6 @@ func main() {
 	}
 
 	logger.Info("Shutting down gracefully...")
-
 }
 
 func fileServer(r chi.Router, path string, root http.FileSystem) {

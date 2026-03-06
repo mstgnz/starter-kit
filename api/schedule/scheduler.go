@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"context"
 	"log"
 	"time"
 	_ "time/tzdata"
@@ -10,7 +11,7 @@ import (
 )
 
 // https://crontab.guru/
-func CallSchedule(c *cron.Cron) {
+func CallSchedule(ctx context.Context, c *cron.Cron) {
 	// set location
 	loc, err := time.LoadLocation("Europe/Istanbul")
 	if err != nil {
